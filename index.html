@@ -112,13 +112,21 @@
   .aiOutput.show{display:block;}
   .privacyNote{font-size:11.5px; color:var(--ink4); line-height:1.55; margin-top:9px;}
 
-  .selectGrid{display:grid; grid-template-columns:minmax(0,10fr) minmax(112px,2fr); gap:10px; align-items:end; margin-top:13px;}
+  .selectGrid{display:grid; grid-template-columns:minmax(0,9fr) minmax(150px,3fr); gap:10px; align-items:end; margin-top:13px;}
   .selectBlock .labelRow{margin-top:0}
   .toneBox{display:grid; grid-template-columns:1fr; gap:6px; margin-top:7px; background:white; border:1px solid var(--paper3); border-radius:12px; padding:5px;}
+  .toneBox label.optLabel{background:linear-gradient(180deg,#fff9fd,#fff3fb); color:#8a5570;}
+  .toneBox input#toneOptimist:checked + label{background:linear-gradient(135deg,#ffb7da,#b7f1e7 55%,#c5cbff); color:#55314a; box-shadow:0 10px 24px rgba(204,112,165,.28);}
   .toneBox input{position:absolute; opacity:0; pointer-events:none;}
   .toneBox label{display:flex; align-items:center; justify-content:center; min-height:31px; border-radius:9px; font-size:12px; font-weight:800; letter-spacing:.02em; text-transform:none; color:var(--ink3); cursor:pointer; transition:background .18s,color .18s,box-shadow .18s;}
   .toneBox input:checked + label{background:var(--ink); color:var(--paper); box-shadow:0 8px 18px rgba(17,16,14,.12);}
-  .aiLoader{margin:12px 0 0; background:linear-gradient(180deg,#fffdf8,#f9f4eb); border:1px solid var(--line); border-radius:14px; padding:14px; overflow:hidden; position:relative;}
+  .aiLoader{margin:12px 0 0; background:linear-gradient(180deg,#fffdf8,#f9f4eb); border:1px solid var(--line); border-radius:14px; padding:14px; overflow:hidden; position:relative; transition:background .25s,border-color .25s,box-shadow .25s;}
+  body[data-tone="optimist"] .aiLoader{background:linear-gradient(180deg,#fff9fd,#fff6fb 38%,#f5fff9); border-color:#efd7ea; box-shadow:0 16px 32px rgba(217,147,190,.10);}
+  body[data-tone="optimist"] .pulseDot{background:#ff88c2; box-shadow:0 0 0 0 rgba(255,136,194,.34);}
+  body[data-tone="optimist"] .loadFill{background:linear-gradient(90deg,#ff9fc9,#7fdac0,#b6b8ff,#ff9fc9); background-size:240% 100%;}
+  body[data-tone="optimist"] #tonePill{background:linear-gradient(135deg,#fff4fb,#f0fff9); border-color:#ead3e8; color:#865d73;}
+  body[data-tone="optimist"] .toneBox{border-color:#ead5e6; box-shadow:0 8px 20px rgba(214,145,183,.08);} 
+  body[data-tone="optimist"] .toneBox label{color:#8a6076;}
   .aiLoaderTop{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
   .pulseDot{width:10px;height:10px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 0 rgba(52,91,143,.42);animation:pulseDot 1.4s ease-out infinite; flex:0 0 auto;}
   @keyframes pulseDot{70%{box-shadow:0 0 0 10px rgba(52,91,143,0)}100%{box-shadow:0 0 0 0 rgba(52,91,143,0)}}
@@ -130,7 +138,7 @@
   .aiLoaderMeta{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:9px; font-size:11px; color:var(--ink4);}
   .aiLoaderMeta b{color:var(--ink3); font-weight:800;}
 
-  @media(max-width:520px){.selectGrid{grid-template-columns:1fr}.toneBox{grid-template-columns:1fr 1fr}.percentGrid{grid-template-columns:1fr}.followActions,.aiControls{display:grid; grid-template-columns:1fr}.followBtn,.ghostBtn,.aiBtn,.aiFollowBtn,.modelSelect{width:100%}}
+  @media(max-width:520px){.selectGrid{grid-template-columns:1fr}.toneBox{grid-template-columns:repeat(3,1fr)}.percentGrid{grid-template-columns:1fr}.followActions,.aiControls{display:grid; grid-template-columns:1fr}.followBtn,.ghostBtn,.aiBtn,.aiFollowBtn,.modelSelect{width:100%}}
 
 </style>
 </head>
@@ -139,7 +147,7 @@
   <header>
     <div class="brand">
       <div class="logo">Hora<em>ry</em></div>
-      <div class="sub">Horary + Free AI Router v10</div>
+      <div class="sub">Horary + Free AI Router v11</div>
     </div>
     <div class="badge" id="clock">—</div>
   </header>
@@ -174,6 +182,7 @@
         <div class="toneBox" role="radiogroup" aria-label="Yorum tonu">
           <input type="radio" id="toneBrutal" name="tone" value="brutal" checked><label for="toneBrutal">Agresif</label>
           <input type="radio" id="toneNormal" name="tone" value="normal"><label for="toneNormal">Normal</label>
+          <input type="radio" id="toneOptimist" name="tone" value="optimist"><label for="toneOptimist" class="optLabel">Optimist</label>
         </div>
       </div>
     </div>
@@ -331,8 +340,9 @@
     const toneEl = document.querySelector(`input[name="tone"][value="${savedTone}"]`) || $('toneBrutal');
     if(toneEl) toneEl.checked = true;
     updateTonePill();
+    applyToneTheme();
     $('category').addEventListener('change', () => localStorage.setItem('horary_cat', $('category').value));
-    document.querySelectorAll('input[name="tone"]').forEach(el => el.addEventListener('change', () => { localStorage.setItem('horary_tone', getTone()); updateTonePill(); }));
+    document.querySelectorAll('input[name="tone"]').forEach(el => el.addEventListener('change', () => { localStorage.setItem('horary_tone', getTone()); updateTonePill(); applyToneTheme(); }));
     $('analyzeBtn').addEventListener('click', analyzeNow);
     $('copyReport').addEventListener('click', copyReport);
     $('clearBtn').addEventListener('click', () => { $('question').value=''; lastAIAnswer=''; clearFollowups(true); $('answerCard').classList.add('hidden'); $('report').classList.add('hidden'); $('mainResult').classList.add('hidden'); $('followCard').classList.add('hidden'); $('aiCard').classList.add('hidden'); $('aiOutput').classList.remove('show'); $('aiOutput').textContent=''; hideAILoader(); $('aiStatus').textContent='AI router hazır. Endpoint otomatik tanımlı.'; });
@@ -1170,7 +1180,18 @@ Sert, net, detaylı, doğrudan. Kullanıcı moral metni istemiyor. "Olur gibi am
   function updateTonePill(){
     const tone = getTone();
     const pill = $('tonePill');
-    if(pill) pill.textContent = tone === 'normal' ? 'Horary agent · normal mod' : 'Horary agent · agresif mod';
+    if(!pill) return;
+    if(tone === 'normal') pill.textContent = 'Horary agent · normal mod';
+    else if(tone === 'optimist') pill.textContent = 'Horary agent · optimist mod';
+    else pill.textContent = 'Horary agent · agresif mod';
+  }
+  function applyToneTheme(){
+    document.body.dataset.tone = getTone();
+    const meta = document.querySelector('#aiLoaderMeta b');
+    if(meta){
+      const tone = getTone();
+      meta.textContent = tone === 'normal' ? 'Dengeli yorum modu' : tone === 'optimist' ? 'Sweet & sugar yorum modu' : 'Detaylı yorum modu';
+    }
   }
   function showAILoader(kind){
     const box = $('aiLoader');

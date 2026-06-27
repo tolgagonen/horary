@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Horary Offline Tool v2</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+  :root{
+    --ink:#11100e; --ink2:#3b3731; --ink3:#776f63; --ink4:#aaa196;
+    --paper:#f6f1e8; --paper2:#eee6d8; --paper3:#ded3c2; --card:#fffdf8;
+    --accent:#9c3f1d; --accent2:#d7793f; --accentSoft:#fff0e6;
+    --green:#2d6a4f; --greenSoft:#e8f5ee; --red:#9b1c1c; --redSoft:#fee6e2;
+    --yellow:#9a6314; --yellowSoft:#fff2cc; --blue:#345b8f; --blueSoft:#e8eef8;
+    --muted:#7f766a; --line:#e0d5c3; --r:14px; --serif: Georgia, 'Times New Roman', serif;
+    --sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  }
+  html{scroll-behavior:smooth}
+  body{font-family:var(--sans); background:var(--paper); color:var(--ink); min-height:100vh; overflow-x:hidden;}
+  body::before{content:""; position:fixed; inset:0; pointer-events:none; z-index:9999; opacity:.45; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E")}
+  .wrap{max-width:820px; margin:0 auto; padding:0 18px 46px;}
+  header{padding:28px 0 20px; border-bottom:1px solid var(--paper3); display:flex; align-items:flex-end; justify-content:space-between; gap:14px;}
+  .brand .logo{font-family:var(--serif); font-size:36px; letter-spacing:-.04em; line-height:1;}
+  .brand .logo em{font-style:italic; color:var(--accent);}
+  .brand .sub{margin-top:4px; font-size:11px; color:var(--ink3); text-transform:uppercase; letter-spacing:.11em; font-weight:500;}
+  .badge{display:inline-flex; align-items:center; gap:7px; background:var(--ink); color:var(--paper); border-radius:99px; padding:7px 12px; font-size:11px; letter-spacing:.08em; text-transform:uppercase; white-space:nowrap;}
+  .badge::before{content:""; width:6px; height:6px; border-radius:50%; background:var(--accent2);}
+  .hero{padding:26px 0 18px;}
+  .hero h1{font-family:var(--serif); font-weight:400; font-size:clamp(30px, 8vw, 48px); line-height:1.03; letter-spacing:-.045em; margin-bottom:10px;}
+  .hero h1 em{font-style:italic; color:var(--accent);}
+  .hero p{font-size:14px; line-height:1.7; color:var(--ink2); max-width:620px; font-weight:350;}
+  .inputCard,.card,.answer{background:var(--card); border:1px solid var(--line); border-radius:var(--r); box-shadow:0 16px 36px rgba(54,43,27,.055);}
+  .inputCard{padding:17px; margin-bottom:16px;}
+  .labelRow{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:7px;}
+  label,.label{font-size:11px; color:var(--ink3); letter-spacing:.08em; text-transform:uppercase; font-weight:700;}
+  .hint{font-size:12px; color:var(--ink4);}
+  textarea,select{width:100%; font-family:var(--sans); font-size:15px; color:var(--ink); background:white; border:1px solid var(--paper3); border-radius:12px; outline:0; transition:border-color .2s, box-shadow .2s;}
+  textarea{min-height:112px; line-height:1.6; padding:14px; resize:vertical;}
+  textarea::placeholder{font-family:var(--serif); font-style:italic; color:var(--ink4); font-size:16px;}
+  select{padding:12px 13px; margin-top:7px; appearance:auto; cursor:pointer;}
+  textarea:focus,select:focus{border-color:var(--ink3); box-shadow:0 0 0 3px rgba(17,16,14,.06)}
+  .controls{display:flex; gap:9px; flex-wrap:wrap; margin-top:13px;}
+  button{font-family:var(--sans); border:0; cursor:pointer; border-radius:12px; transition:transform .18s, background .18s, opacity .18s, border-color .18s;}
+  button:hover{transform:translateY(-1px)} button:active{transform:translateY(0)} button:disabled{opacity:.48; cursor:not-allowed; transform:none}
+  .primary{flex:1 1 210px; background:var(--ink); color:var(--paper); padding:13px 16px; font-size:14px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; gap:8px;}
+  .small{background:transparent; color:var(--ink3); border:1px solid var(--paper3); padding:12px 14px; font-size:13px; font-weight:600;}
+  .small:hover{border-color:var(--ink3); color:var(--ink)}
+  .spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.34);border-top-color:var(--paper);border-radius:50%;display:none;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.loading .spin{display:inline-block}.loading{opacity:.82}
+  .microInfo{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:13px 0 0;}
+  .mini{background:var(--paper); border:1px solid var(--paper3); border-radius:12px; padding:10px;}
+  .mini .k{font-size:10px; color:var(--ink4); text-transform:uppercase; letter-spacing:.07em; margin-bottom:4px; font-weight:700}.mini .v{font-size:13px; color:var(--ink2); font-weight:650; word-break:break-word;}
+  #status{font-size:12px; line-height:1.55; color:var(--ink3); margin-top:10px;}
+  .notice{background:var(--accentSoft); color:#6d2c12; border:1px solid #efc2a7; border-radius:12px; padding:11px 12px; font-size:12px; line-height:1.55; margin-top:12px;}
+  .ok{background:var(--greenSoft); color:var(--green); border:1px solid #b9ddc8; border-radius:12px; padding:11px 12px; font-size:12px; line-height:1.55; margin-top:12px}.error{background:var(--redSoft); color:var(--red); border:1px solid #f0b9b2; border-radius:12px; padding:11px 12px; font-size:12px; line-height:1.55; margin-top:12px}
+  .hidden{display:none!important}
+  .answer{padding:22px; margin:18px 0 14px; background:var(--ink); color:var(--paper); position:relative; overflow:hidden;}
+  .answer::before{content:""; position:absolute; width:170px; height:170px; border-radius:50%; border:1px solid rgba(255,255,255,.06); right:-44px; top:-50px}.answer::after{content:""; position:absolute; width:86px; height:86px; border-radius:50%; border:1px solid rgba(255,255,255,.055); right:26px; top:28px}.answer.badish{background:#2a1714}
+  .answerTop{display:flex; align-items:flex-start; justify-content:space-between; gap:18px; position:relative; z-index:1;}
+  .tiny{font-size:12px; line-height:1.55; color:var(--ink3)}.answer .tiny{color:rgba(246,241,232,.58)}
+  h2{font-family:var(--serif); font-size:34px; font-weight:400; letter-spacing:-.035em; line-height:1.06; margin-top:5px;}
+  .scoreRing{width:84px; height:84px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:conic-gradient(var(--green) 0deg,var(--green) 0deg,rgba(255,255,255,.10) 0deg); border:1px solid rgba(255,255,255,.13); color:white; font-size:18px; font-weight:800; flex:0 0 auto;}
+  .pill{display:inline-flex; align-items:center; border-radius:99px; padding:6px 9px; margin:4px 4px 0 0; font-size:11px; font-weight:700; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10); color:inherit;}
+  .section{margin-top:16px}.section h3{font-family:var(--serif); font-weight:400; font-size:21px; letter-spacing:-.02em; margin:0 0 8px}.section p{font-size:14px; line-height:1.75; color:var(--ink2); font-weight:350; margin:0 0 10px}.answer .section p{color:rgba(246,241,232,.72)}
+  .card{padding:16px; margin-top:14px;}.cardTitle{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px}.cardTitle b{font-family:var(--serif); font-size:21px; font-weight:400;}.muted{color:var(--ink3)}
+  .kpiStrip{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:10px 0 4px;}.kpi{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px}.kpi .v{font-family:var(--serif); font-size:23px; line-height:1; letter-spacing:-.03em; color:var(--ink)}.kpi .t{font-size:10px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink4); margin-top:6px; font-weight:700}
+  #report{padding:20px;}#report h3{font-family:var(--serif); font-size:22px; font-weight:400; letter-spacing:-.02em; margin:4px 0 9px}#report p,#report li{font-size:14px; line-height:1.8; color:var(--ink2); font-weight:350}#report ul{padding-left:18px; margin:8px 0 12px}#report b{color:var(--ink)}
+  details.tech{margin-top:14px; background:var(--card); border:1px solid var(--line); border-radius:var(--r); overflow:hidden;}details.tech>summary{list-style:none; cursor:pointer; padding:16px; display:flex; align-items:center; justify-content:space-between; gap:12px; font-family:var(--serif); font-size:22px; letter-spacing:-.02em;}details.tech>summary::-webkit-details-marker{display:none}details.tech>summary span{font-family:var(--sans); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink4);}
+  .mainGrid{display:grid; grid-template-columns:1fr; gap:12px; padding:0 16px 16px}.chartBox canvas{width:100%; height:auto; display:block; background:var(--paper); border:1px solid var(--paper3); border-radius:14px;}.tableWrap{overflow:auto; max-width:100%; -webkit-overflow-scrolling:touch;}
+  table{width:100%; border-collapse:separate; border-spacing:0 7px; min-width:560px}th{text-align:left; font-size:10px; color:var(--ink4); text-transform:uppercase; letter-spacing:.07em; padding:0 8px; white-space:nowrap}td{background:var(--paper); border-top:1px solid var(--paper3); border-bottom:1px solid var(--paper3); padding:8px; font-size:12px; color:var(--ink2); vertical-align:top}td:first-child{border-left:1px solid var(--paper3); border-radius:10px 0 0 10px; font-weight:750; color:var(--ink)}td:last-child{border-right:1px solid var(--paper3); border-radius:0 10px 10px 0}
+  .good{color:var(--green)}.bad{color:var(--red)}.warn{color:var(--yellow)}.info{color:var(--blue)}
+  .log{max-height:120px; overflow:auto; background:var(--paper); border:1px solid var(--paper3); border-radius:12px; padding:10px; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:11px; color:var(--ink3); white-space:pre-wrap; margin-top:10px}
+  .copyBox{position:fixed; left:50%; bottom:22px; transform:translateX(-50%) translateY(20px); background:var(--ink); color:var(--paper); border-radius:99px; padding:10px 16px; font-size:13px; opacity:0; pointer-events:none; transition:.25s; z-index:10000}.copyBox.show{opacity:1; transform:translateX(-50%) translateY(0)}
+  footer{max-width:820px; margin:18px auto 0; padding:18px 18px 26px; border-top:1px solid var(--paper3); display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; color:var(--ink4); font-size:12px}.footerBrand{font-family:var(--serif); color:var(--ink3)}.footerBrand em{color:var(--accent); font-style:italic}
+  @media(max-width:720px){
+    .wrap{padding:0 14px 34px} header{padding-top:22px}.brand .logo{font-size:32px}.hero{padding:22px 0 14px}.hero p{font-size:13.5px}.inputCard{padding:14px}.controls{display:grid;grid-template-columns:1fr 1fr}.primary{grid-column:1 / -1; width:100%;}.microInfo{grid-template-columns:1fr 1fr}.kpiStrip{grid-template-columns:1fr 1fr}.answer{padding:18px}.answerTop{align-items:center}.scoreRing{width:74px;height:74px;font-size:16px}h2{font-size:28px}.section p,#report p,#report li{font-size:13.5px}.mainGrid{padding:0 12px 12px}details.tech>summary{font-size:20px;padding:14px} table{min-width:520px}.card{padding:14px}
+  }
+  @media(max-width:420px){.controls{grid-template-columns:1fr}.small{width:100%}.microInfo{grid-template-columns:1fr}.kpiStrip{grid-template-columns:1fr 1fr}.answerTop{gap:10px}.scoreRing{width:68px;height:68px;font-size:14px}textarea{min-height:104px}.hero h1{font-size:33px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="logo">Hora<em>ry</em></div>
+      <div class="sub">Offline soru haritası</div>
+    </div>
+    <div class="badge" id="clock">—</div>
+  </header>
+
+  <section class="hero">
+    <h1>Soruyu yaz,<br><em>an haritasını</em> oku.</h1>
+    <p>API yok, yapay zekâ yok. Saat cihazdan, konum tarayıcıdan alınır; seçtiğin kategoriye göre kural tabanlı uzun horary yorumu üretilir.</p>
+  </section>
+
+  <section class="inputCard">
+    <div class="labelRow"><label for="question">Soru</label><span class="hint">Konum + saat otomatik</span></div>
+    <textarea id="question" placeholder="Örnek: TSKB alınır mı? / Bu iş olacak mı? / Beni arayacak mı?"></textarea>
+
+    <div class="labelRow" style="margin-top:13px"><label for="category">Kategori</label><span class="hint">Zorunlu seçim</span></div>
+    <select id="category">
+      <option value="general">Genel soru</option>
+      <option value="investment" selected>Yatırım / Para</option>
+      <option value="career">İş / Kariyer</option>
+      <option value="relationship">İlişki / Karşı taraf</option>
+      <option value="property">Ev / Taşınma / Mülk</option>
+      <option value="lost">Kayıp eşya</option>
+      <option value="legal">Hukuk / Resmi iş</option>
+      <option value="health">Sağlık</option>
+      <option value="education">Eğitim / Sınav</option>
+      <option value="travel">Yolculuk / Seyahat</option>
+    </select>
+
+    <div class="controls">
+      <button id="analyzeBtn" class="primary"><span class="spin"></span>Horary Analiz Et</button>
+      <button class="small" id="copyReport" disabled>Raporu Kopyala</button>
+      <button class="small" id="clearBtn">Temizle</button>
+    </div>
+    <div id="status">Hazır. Analiz için konum izni istenir.</div>
+    <div class="microInfo">
+      <div class="mini"><div class="k">Saat</div><div class="v">Cihazdan otomatik</div></div>
+      <div class="mini"><div class="k">Konum</div><div class="v">Tarayıcı izniyle</div></div>
+    </div>
+  </section>
+
+  <div class="kpiStrip">
+    <div class="kpi"><div class="v" id="kTime">-</div><div class="t">Soru saati</div></div>
+    <div class="kpi"><div class="v" id="kLoc">-</div><div class="t">Konum</div></div>
+    <div class="kpi"><div class="v" id="kAsc">-</div><div class="t">ASC</div></div>
+    <div class="kpi"><div class="v" id="kMoon">-</div><div class="t">Ay</div></div>
+  </div>
+
+  <section id="answerCard" class="answer hidden">
+    <div class="answerTop">
+      <div>
+        <div class="tiny">Horary cevabı</div>
+        <h2 id="verdict">-</h2>
+        <div id="answerPills" style="margin-top:8px"></div>
+      </div>
+      <div class="scoreRing" id="scoreRing">-</div>
+    </div>
+    <div id="shortAnswer" class="section" style="margin-top:14px"></div>
+  </section>
+
+  <section id="report" class="card hidden"></section>
+
+  <details class="tech hidden" id="mainResult">
+    <summary>Teknik harita <span>Gezegenler, açılar, chart</span></summary>
+    <div class="mainGrid">
+      <section class="chartBox">
+        <div class="cardTitle">
+          <b>Horary haritası</b>
+          <span class="pill" id="chartMeta">-</span>
+        </div>
+        <canvas id="chart" width="720" height="720"></canvas>
+      </section>
+      <section>
+        <div class="cardTitle">
+          <b>Gezegen tablosu</b>
+          <span class="pill" id="houseSystem">Whole Sign</span>
+        </div>
+        <div class="tableWrap"><table id="planetTable"></table></div>
+        <div class="section">
+          <h3>Açı tablosu</h3>
+          <div class="tableWrap"><table id="aspectTable"></table></div>
+        </div>
+      </section>
+      <section>
+        <div class="label">Canlı log</div>
+        <div class="log" id="log"></div>
+      </section>
+    </div>
+  </details>
+</div>
+<footer>
+  <div>Offline horary yorum aracı · Tek dosya</div>
+  <div class="footerBrand">Hora<em>ry</em></div>
+</footer>
+<div class="copyBox" id="copyBox">Rapor kopyalandı.</div>
+
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const DEG = Math.PI / 180, RAD = 180 / Math.PI;
+  const SIGNS = ['Koç','Boğa','İkizler','Yengeç','Aslan','Başak','Terazi','Akrep','Yay','Oğlak','Kova','Balık'];
+  const SIGN_GLYPHS = ['♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓'];
+  const PLANETS = ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn'];
+  const PNAME = {Sun:'Güneş',Moon:'Ay',Mercury:'Merkür',Venus:'Venüs',Mars:'Mars',Jupiter:'Jüpiter',Saturn:'Satürn'};
+  const PGLYPH = {Sun:'☉',Moon:'☽',Mercury:'☿',Venus:'♀',Mars:'♂',Jupiter:'♃',Saturn:'♄'};
+  const RULERS = ['Mars','Venus','Mercury','Moon','Sun','Mercury','Venus','Mars','Jupiter','Saturn','Saturn','Jupiter'];
+  const EXALT = {Sun:0, Moon:1, Mercury:5, Venus:11, Mars:9, Jupiter:3, Saturn:6};
+  const ASPECTS = [
+    {name:'Kavuşum', angle:0, type:'mixed', glyph:'☌'},
+    {name:'Sekstil', angle:60, type:'good', glyph:'⚹'},
+    {name:'Kare', angle:90, type:'bad', glyph:'□'},
+    {name:'Üçgen', angle:120, type:'good', glyph:'△'},
+    {name:'Karşıt', angle:180, type:'bad', glyph:'☍'}
+  ];
+  const CATEGORIES = {
+    general:{name:'Genel soru', targetHouse:10, targetLabel:'sonuç / dış dünyadaki karşılık', secondary:[4,7], explain:'Genel sorularda 1. ev soru sahibini, 10. ev görünür sonucu ve olayın dış dünyada gerçekleşme gücünü gösterir.'},
+    investment:{name:'Yatırım / Para', targetHouse:5, targetLabel:'spekülatif yatırım / riskli kazanç', secondary:[2,8,10,11], explain:'Yatırım sorularında 1. ev seni, 2. ev paranı, 5. ev spekülatif yatırım ve riskli kazancı, 8. ev kayıp/karşı taraf riskini, 11. ev beklenen kazancı gösterir.'},
+    career:{name:'İş / Kariyer', targetHouse:10, targetLabel:'iş / kariyer hedefi', secondary:[6,11], explain:'İş sorularında 1. ev seni, 10. ev kariyer hedefini, 6. ev günlük çalışma şartlarını, 11. ev destek ve çevreyi gösterir.'},
+    relationship:{name:'İlişki / Karşı taraf', targetHouse:7, targetLabel:'karşı taraf', secondary:[5,11], explain:'İlişki sorularında 1. ev seni, 7. ev karşı tarafı, Ay olayın akışını, 5. ev romantik isteği gösterir.'},
+    property:{name:'Ev / Taşınma / Mülk', targetHouse:4, targetLabel:'ev / mülk / yerleşim', secondary:[7,10], explain:'Mülk sorularında 4. ev ev ve taşınmazı, 7. ev satıcı/kiraya veren tarafı, 10. ev sürecin sonucunu gösterir.'},
+    lost:{name:'Kayıp eşya', targetHouse:2, targetLabel:'kayıp eşya / kişisel mal', secondary:[4,7], explain:'Kayıp eşya sorularında 2. ev kayıp eşyayı, 4. ev bulunacağı yeri ve son durumu, Ay ise hareketi gösterir.'},
+    legal:{name:'Hukuk / Resmi iş', targetHouse:9, targetLabel:'hukuk / resmi süreç', secondary:[7,10], explain:'Hukuk sorularında 9. ev hukuk ve mahkemeyi, 10. ev otorite/kararı, 7. ev karşı tarafı gösterir.'},
+    health:{name:'Sağlık', targetHouse:6, targetLabel:'hastalık / sağlık meselesi', secondary:[1,8,10], explain:'Sağlık sorularında 1. ev kişiyi, 6. ev rahatsızlığı, 8. ev kriz riskini, 10. ev tedavi/sonuç tarafını gösterir.'},
+    education:{name:'Eğitim / Sınav', targetHouse:9, targetLabel:'eğitim / sınav / yüksek bilgi', secondary:[3,10,11], explain:'Eğitim sorularında 9. ev yüksek eğitim ve sınavı, 3. ev öğrenme/iletişimi, 10. ev sonucu gösterir.'},
+    travel:{name:'Yolculuk / Seyahat', targetHouse:9, targetLabel:'uzak yolculuk / seyahat', secondary:[3,4,10], explain:'Seyahat sorularında 9. ev uzak yolculuğu, 3. ev kısa yol/ulaşımı, 4. ev dönüş ve güvenli varışı gösterir.'}
+  };
+  let lastReportText = '';
+
+  function init(){
+    $('question').value = localStorage.getItem('horary_q') || '';
+    $('category').value = localStorage.getItem('horary_cat') || 'investment';
+    $('question').addEventListener('input', () => localStorage.setItem('horary_q', $('question').value));
+    $('category').addEventListener('change', () => localStorage.setItem('horary_cat', $('category').value));
+    $('analyzeBtn').addEventListener('click', analyzeNow);
+    $('copyReport').addEventListener('click', copyReport);
+    $('clearBtn').addEventListener('click', () => { $('question').value=''; localStorage.removeItem('horary_q'); });
+    tickClock(); setInterval(tickClock, 1000);
+    log('Araç hazır. Analiz için soru yaz, kategori seç, butona bas.');
+  }
+  function tickClock(){ $('clock').textContent = new Date().toLocaleString('tr-TR', {hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+  function log(msg){ const line = '['+new Date().toLocaleTimeString('tr-TR')+'] '+msg+'\n'; $('log').textContent += line; $('log').scrollTop = $('log').scrollHeight; }
+  function setBusy(b){ $('analyzeBtn').disabled = b; $('analyzeBtn').classList.toggle('loading', b); }
+  function showStatus(html, cls='tiny'){ $('status').className = cls; $('status').innerHTML = html; }
+
+  async function analyzeNow(){
+    const question = $('question').value.trim();
+    const category = $('category').value;
+    if(!question){ showStatus('Önce soru yaz.', 'error'); return; }
+    if(!navigator.geolocation){ showStatus('Tarayıcı konum API desteklemiyor. Bu sürüm manuel konum almadığı için analiz yapılamaz.', 'error'); return; }
+    setBusy(true); showStatus('Konum izni bekleniyor...', 'notice'); log('Konum isteniyor.');
+    try{
+      const pos = await getPosition();
+      const date = new Date();
+      const lat = pos.coords.latitude, lon = pos.coords.longitude;
+      log('Konum alındı: '+lat.toFixed(5)+', '+lon.toFixed(5));
+      const analysis = computeHorary({question, category, date, lat, lon});
+      renderAll(analysis);
+      showStatus('Analiz tamamlandı. Konum ve saat otomatik kullanıldı.', 'ok');
+      $('copyReport').disabled = false;
+    }catch(e){
+      console.error(e);
+      showStatus('Konum alınamadı: '+escapeHtml(String(e.message || e))+'<br>Not: Bazı tarayıcılar <code>file://</code> dosyalarda konumu engeller. Dosyayı localhost/HTTPS üzerinden açmak gerekebilir.', 'error');
+      log('HATA: '+String(e.message || e));
+    }finally{ setBusy(false); }
+  }
+  function getPosition(){
+    return new Promise((resolve,reject)=>{
+      navigator.geolocation.getCurrentPosition(resolve, reject, {enableHighAccuracy:true, timeout:15000, maximumAge:30000});
+    });
+  }
+
+  function computeHorary(ctx){
+    const jd = julianDate(ctx.date);
+    const d = jd - 2451543.5;
+    const epsilon = (23.4393 - 3.563e-7 * d);
+    const gmst = gmstDeg(jd);
+    const lst = norm360(gmst + ctx.lon);
+    const asc = ascendant(lst, ctx.lat, epsilon);
+    const mc = mcLongitude(lst, epsilon);
+    const ascSign = signOf(asc);
+    const positions = {};
+    PLANETS.forEach(p => {
+      const lonNow = planetLongitude(p, d);
+      const lonLater = planetLongitude(p, d + 1);
+      const speed = norm180(lonLater - lonNow);
+      positions[p] = {name:PNAME[p], glyph:PGLYPH[p], lon:lonNow, sign:signOf(lonNow), signDeg:signDeg(lonNow), house:wholeSignHouse(lonNow, ascSign), speed, retro:(p !== 'Sun' && p !== 'Moon' && speed < -0.02)};
+    });
+    const houses = buildWholeSignHouses(ascSign);
+    PLANETS.forEach(p => { positions[p].strength = dignityScore(p, positions[p], positions); positions[p].dignityText = dignityText(p, positions[p], positions); });
+    const aspects = buildAspects(positions, d);
+    const moonInfo = analyzeMoon(positions, d);
+    const radical = radicalityWarnings(asc, positions);
+    const categoryInfo = CATEGORIES[ctx.category];
+    const sigs = selectSignificators(categoryInfo, ascSign);
+    const rule = evaluateRules({ctx, jd, d, asc, mc, ascSign, houses, positions, aspects, moonInfo, radical, categoryInfo, sigs});
+    return {ctx, jd, d, epsilon, gmst, lst, asc, mc, ascSign, houses, positions, aspects, moonInfo, radical, categoryInfo, sigs, rule};
+  }
+
+  function julianDate(date){
+    return date.getTime()/86400000 + 2440587.5;
+  }
+  function gmstDeg(jd){
+    const T = (jd - 2451545.0) / 36525;
+    return norm360(280.46061837 + 360.98564736629*(jd-2451545.0) + 0.000387933*T*T - T*T*T/38710000);
+  }
+  function norm360(x){ x = x % 360; return x < 0 ? x+360 : x; }
+  function norm180(x){ x = norm360(x); return x > 180 ? x-360 : x; }
+  function sinD(x){return Math.sin(x*DEG)} function cosD(x){return Math.cos(x*DEG)} function tanD(x){return Math.tan(x*DEG)} function atan2D(y,x){return Math.atan2(y,x)*RAD} function asinD(x){return Math.asin(Math.max(-1,Math.min(1,x)))*RAD}
+  function signOf(lon){ return Math.floor(norm360(lon)/30); }
+  function signDeg(lon){ return norm360(lon) % 30; }
+  function fmtDeg(lon){ const s=signOf(lon), d=signDeg(lon); const deg=Math.floor(d), min=Math.round((d-deg)*60); return `${deg}°${String(min).padStart(2,'0')}′ ${SIGNS[s]}`; }
+  function fmtShort(lon){ const s=signOf(lon), d=signDeg(lon); return `${d.toFixed(1)}° ${SIGN_GLYPHS[s]}`; }
+  function angularDistance(a,b){ return Math.abs(norm180(a-b)); }
+  function eclToRaDec(lon, eps){
+    const x = cosD(lon), y = sinD(lon)*cosD(eps), z = sinD(lon)*sinD(eps);
+    return {ra:norm360(atan2D(y,x)), dec:asinD(z)};
+  }
+  function altitudeForEclLon(lon, lst, lat, eps){
+    const rd = eclToRaDec(lon, eps);
+    const H = norm180(lst - rd.ra);
+    return asinD(sinD(lat)*sinD(rd.dec) + cosD(lat)*cosD(rd.dec)*cosD(H));
+  }
+  function ascendant(lst, lat, eps){
+    const roots=[];
+    let prevLon=0, prevAlt=altitudeForEclLon(0,lst,lat,eps);
+    for(let lon=1; lon<=360; lon+=1){
+      const alt = altitudeForEclLon(lon,lst,lat,eps);
+      if((prevAlt<=0 && alt>=0) || (prevAlt>=0 && alt<=0)){
+        let a=prevLon,b=lon,fa=prevAlt;
+        for(let k=0;k<28;k++){
+          const m=(a+b)/2, fm=altitudeForEclLon(m,lst,lat,eps);
+          if((fa<=0 && fm>=0) || (fa>=0 && fm<=0)){ b=m; } else { a=m; fa=fm; }
+        }
+        const root=norm360((a+b)/2);
+        const rd=eclToRaDec(root,eps);
+        const H=norm180(lst-rd.ra);
+        roots.push({lon:root,H});
+      }
+      prevLon=lon; prevAlt=alt;
+    }
+    const east = roots.find(r => r.H < 0);
+    return east ? east.lon : (roots[0]?.lon || 0);
+  }
+  function mcLongitude(lst, eps){ return norm360(atan2D(sinD(lst)/cosD(eps), cosD(lst))); }
+  function wholeSignHouse(lon, ascSign){ return ((signOf(lon) - ascSign + 12) % 12) + 1; }
+  function buildWholeSignHouses(ascSign){ return Array.from({length:12}, (_,i)=>({house:i+1, sign:(ascSign+i)%12, ruler:RULERS[(ascSign+i)%12]})); }
+
+  function solveKepler(M,e){
+    M = norm360(M);
+    let E = M + RAD*e*sinD(M)*(1+e*cosD(M));
+    for(let i=0;i<8;i++){
+      const Er=E*DEG, Mr=M*DEG;
+      E = E - (E*DEG - e*Math.sin(Er) - Mr) / (1 - e*Math.cos(Er)) * RAD;
+    }
+    return E;
+  }
+  function elements(p,d){
+    const E = {
+      Mercury:{N:48.3313+3.24587e-5*d, i:7.0047+5.00e-8*d, w:29.1241+1.01444e-5*d, a:0.387098, e:0.205635+5.59e-10*d, M:168.6562+4.0923344368*d},
+      Venus:{N:76.6799+2.46590e-5*d, i:3.3946+2.75e-8*d, w:54.8910+1.38374e-5*d, a:0.723330, e:0.006773-1.302e-9*d, M:48.0052+1.6021302244*d},
+      Mars:{N:49.5574+2.11081e-5*d, i:1.8497-1.78e-8*d, w:286.5016+2.92961e-5*d, a:1.523688, e:0.093405+2.516e-9*d, M:18.6021+0.5240207766*d},
+      Jupiter:{N:100.4542+2.76854e-5*d, i:1.3030-1.557e-7*d, w:273.8777+1.64505e-5*d, a:5.20256, e:0.048498+4.469e-9*d, M:19.8950+0.0830853001*d},
+      Saturn:{N:113.6634+2.38980e-5*d, i:2.4886-1.081e-7*d, w:339.3939+2.97661e-5*d, a:9.55475, e:0.055546-9.499e-9*d, M:316.9670+0.0334442282*d},
+      Moon:{N:125.1228-0.0529538083*d, i:5.1454, w:318.0634+0.1643573223*d, a:60.2666, e:0.054900, M:115.3654+13.0649929509*d}
+    };
+    return E[p];
+  }
+  function sunLonAndRect(d){
+    const w=282.9404 + 4.70935e-5*d, e=0.016709 - 1.151e-9*d, M=356.0470 + 0.9856002585*d;
+    const E = solveKepler(M,e);
+    const xv = cosD(E) - e, yv = Math.sqrt(1-e*e)*sinD(E);
+    const v = atan2D(yv,xv), r = Math.sqrt(xv*xv+yv*yv);
+    const lon = norm360(v+w);
+    return {lon, r, x:r*cosD(lon), y:r*sinD(lon)};
+  }
+  function helioCoords(p,d){
+    const el = elements(p,d), E = solveKepler(el.M, el.e);
+    const xv = el.a*(cosD(E)-el.e), yv = el.a*Math.sqrt(1-el.e*el.e)*sinD(E);
+    const v = atan2D(yv,xv), r = Math.sqrt(xv*xv+yv*yv);
+    const vw = v + el.w;
+    const xh = r*(cosD(el.N)*cosD(vw) - sinD(el.N)*sinD(vw)*cosD(el.i));
+    const yh = r*(sinD(el.N)*cosD(vw) + cosD(el.N)*sinD(vw)*cosD(el.i));
+    const zh = r*(sinD(vw)*sinD(el.i));
+    return {xh,yh,zh,r,v};
+  }
+  function planetLongitude(p,d){
+    if(p === 'Sun') return sunLonAndRect(d).lon;
+    if(p === 'Moon'){
+      const c = helioCoords('Moon', d);
+      let lon = norm360(atan2D(c.yh,c.xh));
+      // Basit Ay perturbasyon düzeltmeleri. V1 hassasiyetini biraz iyileştirir.
+      const sun = sunLonAndRect(d);
+      const Ms = norm360(356.0470 + 0.9856002585*d);
+      const Mm = norm360(elements('Moon',d).M);
+      const Lm = lon;
+      const D = norm360(Lm - sun.lon);
+      const F = norm360(Lm - elements('Moon',d).N);
+      lon += -1.274*sinD(Mm - 2*D) + 0.658*sinD(2*D) - 0.186*sinD(Ms) - 0.059*sinD(2*Mm - 2*D) - 0.057*sinD(Mm - 2*D + Ms) + 0.053*sinD(Mm + 2*D) + 0.046*sinD(2*D - Ms) + 0.041*sinD(Mm - Ms) - 0.035*sinD(D) - 0.031*sinD(Mm + Ms) - 0.015*sinD(2*F - 2*D) + 0.011*sinD(Mm - 4*D);
+      return norm360(lon);
+    }
+    const sun = sunLonAndRect(d);
+    const c = helioCoords(p,d);
+    const xg = c.xh + sun.x, yg = c.yh + sun.y, zg = c.zh;
+    return norm360(atan2D(yg,xg));
+  }
+
+  function dignityScore(p, pp, positions){
+    let score = 0;
+    const s = pp.sign;
+    if(RULERS[s] === p) score += 25;
+    if(EXALT[p] === s) score += 18;
+    const detrimentSigns = signsRuledBy(p).map(x => (x+6)%12);
+    if(detrimentSigns.includes(s)) score -= 20;
+    if(typeof EXALT[p] === 'number' && ((EXALT[p]+6)%12) === s) score -= 18;
+    if([1,4,7,10].includes(pp.house)) score += 12;
+    else if([2,5,8,11].includes(pp.house)) score += 6;
+    else score -= 6;
+    if(pp.retro) score -= 10;
+    const sunDist = angularDistance(pp.lon, positions.Sun?.lon ?? pp.lon);
+    if(p !== 'Sun'){
+      if(sunDist <= 0.3) score += 20;
+      else if(sunDist <= 8.5) score -= 12;
+    }
+    return Math.round(score);
+  }
+  function signsRuledBy(p){ const out=[]; RULERS.forEach((r,i)=>{ if(r===p) out.push(i); }); return out; }
+  function dignityText(p, pp, positions){
+    const arr=[]; const s=pp.sign;
+    if(RULERS[s] === p) arr.push('kendi burcunda');
+    if(EXALT[p] === s) arr.push('yücelimde');
+    if(signsRuledBy(p).map(x=>(x+6)%12).includes(s)) arr.push('zararlı konumda');
+    if(typeof EXALT[p] === 'number' && ((EXALT[p]+6)%12) === s) arr.push('düşüşte');
+    if([1,4,7,10].includes(pp.house)) arr.push('köşe evde');
+    else if([2,5,8,11].includes(pp.house)) arr.push('ardıl evde');
+    else arr.push('kadent evde');
+    if(pp.retro) arr.push('retro');
+    if(p !== 'Sun'){
+      const sd = angularDistance(pp.lon, positions.Sun?.lon ?? pp.lon);
+      if(sd <= 0.3) arr.push('cazimi'); else if(sd <= 8.5) arr.push('yanık');
+    }
+    return arr.join(', ') || 'nötr';
+  }
+  function buildAspects(positions, d){
+    const list=[];
+    for(let i=0;i<PLANETS.length;i++) for(let j=i+1;j<PLANETS.length;j++){
+      const a=PLANETS[i], b=PLANETS[j];
+      const pa=positions[a], pb=positions[b];
+      const sep = angularDistance(pa.lon, pb.lon);
+      for(const asp of ASPECTS){
+        const diff = Math.abs(sep - asp.angle);
+        const orb = aspectOrb(a,b,asp.angle);
+        if(diff <= orb){
+          const laterA = planetLongitude(a,d+0.25), laterB = planetLongitude(b,d+0.25);
+          const sepLater = angularDistance(laterA, laterB);
+          const diffLater = Math.abs(sepLater - asp.angle);
+          list.push({p1:a,p2:b,name:asp.name,glyph:asp.glyph,angle:asp.angle,type:asp.type,orb:diff,applying:diffLater < diff, diffLater});
+        }
+      }
+    }
+    list.sort((x,y)=>(x.applying===y.applying?0:(x.applying?-1:1)) || x.orb-y.orb);
+    return list;
+  }
+  function aspectOrb(a,b,angle){ if(angle===0) return 8; if(a==='Moon'||b==='Moon'||a==='Sun'||b==='Sun') return 8; return 6; }
+  function getAspect(aspects,a,b){ return aspects.find(x => (x.p1===a && x.p2===b) || (x.p1===b && x.p2===a)); }
+  function aspectLabel(asp){ if(!asp) return 'açı yok'; return `${asp.glyph} ${asp.name} (${asp.applying?'yaklaşan':'ayrılan'}, orb ${asp.orb.toFixed(1)}°)`; }
+
+  function analyzeMoon(positions,d){
+    const moon = positions.Moon;
+    const degLeft = 30 - signDeg(moon.lon);
+    const possible=[];
+    for(const p of PLANETS){
+      if(p==='Moon') continue;
+      const lon = positions[p].lon;
+      for(const asp of ASPECTS){
+        const targets = [norm360(lon + asp.angle), norm360(lon - asp.angle)];
+        for(const t of targets){
+          const dist = norm360(t - moon.lon);
+          if(dist > 0.05 && dist <= degLeft + 0.05){ possible.push({planet:p, aspect:asp, distance:dist}); }
+        }
+      }
+    }
+    possible.sort((a,b)=>a.distance-b.distance);
+    const last=[];
+    for(const p of PLANETS){ if(p!=='Moon'){ const asp=getAspect(buildAspects(positions,d), 'Moon', p); if(asp && !asp.applying) last.push(asp); } }
+    return {voidOfCourse: possible.length===0, next:possible[0] || null, degLeft, sign:moon.sign};
+  }
+  function radicalityWarnings(asc, positions){
+    const out=[]; const ascDeg=signDeg(asc);
+    if(ascDeg < 3) out.push({type:'earlyAsc', severity:'warn', text:'ASC ilk 3 derecede. Soru erken olabilir; durum henüz tam oluşmamış olabilir.'});
+    if(ascDeg > 27) out.push({type:'lateAsc', severity:'warn', text:'ASC son 3 derecede. Soru geç kalmış veya sonuç büyük ölçüde şekillenmiş olabilir.'});
+    if(positions.Saturn.house === 7) out.push({type:'saturn7', severity:'warn', text:'Satürn 7. evde. Klasik horary’de yorumcunun yanılma riski veya sorunun ağır/karmaşık olması uyarısıdır.'});
+    if(positions.Moon.house === 12) out.push({type:'moon12', severity:'warn', text:'Ay 12. evde. Olayın arka planında görünmeyen, kapalı veya kontrol dışı unsurlar olabilir.'});
+    return out;
+  }
+  function selectSignificators(cat, ascSign){
+    const qR = RULERS[ascSign];
+    const targetSign = (ascSign + cat.targetHouse - 1) % 12;
+    const tR = RULERS[targetSign];
+    const secs = cat.secondary.map(h=>({house:h, sign:(ascSign+h-1)%12, ruler:RULERS[(ascSign+h-1)%12]}));
+    return {querentRuler:qR, targetRuler:tR, targetHouse:cat.targetHouse, targetSign, secondary:secs};
+  }
+  function receptionScore(p1,p2,positions){
+    const s1=positions[p1].sign, s2=positions[p2].sign;
+    const p1ReceivesP2 = RULERS[s1] === p2 || EXALT[p2] === s1;
+    const p2ReceivesP1 = RULERS[s2] === p1 || EXALT[p1] === s2;
+    const p1BadForP2 = signsRuledBy(p2).map(x=>(x+6)%12).includes(s1) || ((EXALT[p2]+6)%12)===s1;
+    const p2BadForP1 = signsRuledBy(p1).map(x=>(x+6)%12).includes(s2) || ((EXALT[p1]+6)%12)===s2;
+    let score=0, text=[];
+    if(p1ReceivesP2 && p2ReceivesP1){ score += 15; text.push('karşılıklı kabul/reception var'); }
+    else if(p1ReceivesP2 || p2ReceivesP1){ score += 7; text.push('tek taraflı kabul/reception var'); }
+    if(p1BadForP2 || p2BadForP1){ score -= 10; text.push('zayıf/olumsuz kabul göstergesi var'); }
+    if(!text.length) text.push('belirgin reception yok');
+    return {score,text:text.join(', ')};
+  }
+  function evaluateRules(a){
+    const {positions, aspects, moonInfo, radical, categoryInfo, sigs} = a;
+    let score = 50;
+    const bullets = [], positives = [], negatives = [], technical = [];
+    const q = sigs.querentRuler, t = sigs.targetRuler;
+    const mainAsp = getAspect(aspects, q, t);
+    const moonAspTarget = getAspect(aspects, 'Moon', t);
+    const moonAspQ = getAspect(aspects, 'Moon', q);
+    const rec = receptionScore(q,t,positions);
+    technical.push(`Soru sahibi: 1. ev yöneticisi ${PNAME[q]} ve Ay.`);
+    technical.push(`Sorulan konu: ${categoryInfo.targetHouse}. ev (${categoryInfo.targetLabel}) yöneticisi ${PNAME[t]}.`);
+    if(mainAsp){
+      if(mainAsp.applying){
+        if(mainAsp.type === 'good'){ score += 25; positives.push(`${PNAME[q]} ile ${PNAME[t]} arasında yaklaşan ${mainAsp.name} var. Bu, soru sahibi ile konu arasında bağlantının kurulmakta olduğunu gösterir.`); }
+        else if(mainAsp.type === 'bad'){ score -= 8; negatives.push(`${PNAME[q]} ile ${PNAME[t]} arasında yaklaşan ${mainAsp.name} var. Bağlantı var ama sürtünme, engel veya bedel üzerinden çalışıyor.`); }
+        else { score += 12; positives.push(`${PNAME[q]} ile ${PNAME[t]} arasında yaklaşan kavuşum var. Konu ile doğrudan temas var; kalitesi gezegenlerin gücüne bağlı.`); }
+      }else{
+        score -= 12; negatives.push(`${PNAME[q]} ile ${PNAME[t]} arasındaki ${mainAsp.name} ayrılan durumda. Bu, ana temasın geçmişte kaldığını veya mevcut soruda ivmenin zayıfladığını gösterir.`);
+      }
+    }else{ score -= 18; negatives.push(`${PNAME[q]} ile ${PNAME[t]} arasında geçerli ana açı yok. Horary’de bu, soru sahibi ile konu arasında doğrudan bağın zayıf olduğunu gösterir.`); }
+    if(moonAspTarget){
+      if(moonAspTarget.applying && moonAspTarget.type === 'good'){ score += 18; positives.push(`Ay, ${PNAME[t]} ile yaklaşan ${moonAspTarget.name} yapıyor. Ay olayın akışını gösterdiği için süreç konuya doğru destekli ilerleyebilir.`); }
+      else if(moonAspTarget.applying && moonAspTarget.type === 'bad'){ score -= 10; negatives.push(`Ay, ${PNAME[t]} ile yaklaşan ${moonAspTarget.name} yapıyor. Olay konuya gidiyor ama stresli/sert bir aşamadan geçiyor.`); }
+      else { score -= 5; negatives.push(`Ay'ın ${PNAME[t]} ile açısı ayrılan durumda. Olayın ana desteği şu andan çok geçmişte kalmış olabilir.`); }
+    }else if(moonInfo.next && moonInfo.next.planet === t){
+      const asp = moonInfo.next.aspect;
+      if(asp.type === 'good'){ score += 15; positives.push(`Ay burçtan çıkmadan ${PNAME[t]} ile ${asp.name} yapacak. Bu, olayın sonraki adımında konuya bağlanma potansiyelidir.`); }
+      else { score -= 7; negatives.push(`Ay burçtan çıkmadan ${PNAME[t]} ile ${asp.name} yapacak. Konu gündeme gelir ama zorlayıcı ilerleyebilir.`); }
+    }else{
+      score -= 6; negatives.push(`Ay'ın sorulan konunun yöneticisine doğrudan destekleyici bir sonraki teması görünmüyor.`);
+    }
+    if(moonInfo.voidOfCourse){ score -= 25; negatives.push('Ay boşlukta görünüyor. Klasik horary’de bu, olayın beklenen şekilde ilerlememesi veya mevcut durumun değişmeden kalması anlamına gelebilir.'); }
+    else if(moonInfo.next){
+      const nx = moonInfo.next;
+      const s = nx.aspect.type === 'good' ? 7 : nx.aspect.type === 'bad' ? -5 : 2;
+      score += s;
+      (s>=0?positives:negatives).push(`Ay'ın burçtan çıkmadan yapacağı ilk ana temas: ${PNAME[nx.planet]} ile ${nx.aspect.name}. Bunu olayın bir sonraki kapısı gibi okuruz.`);
+    }
+    score += clamp(Math.round(positions[q].strength/3), -10, 10);
+    score += clamp(Math.round(positions[t].strength/3), -10, 10);
+    if(positions[q].strength > 10) positives.push(`${PNAME[q]} nispeten güçlü durumda (${positions[q].dignityText}). Bu, soru sahibinin elinin tamamen zayıf olmadığını gösterir.`);
+    if(positions[q].strength < -10) negatives.push(`${PNAME[q]} zayıf durumda (${positions[q].dignityText}). Bu, soru sahibinin baskı altında, kararsız veya şartlara bağımlı olduğunu gösterir.`);
+    if(positions[t].strength > 10) positives.push(`Konu göstergesi ${PNAME[t]} güçlü durumda (${positions[t].dignityText}). Sorulan şeyin kendi tarafında güç/kalite var.`);
+    if(positions[t].strength < -10) negatives.push(`Konu göstergesi ${PNAME[t]} zayıf durumda (${positions[t].dignityText}). Sorulan şeyin zemini veya kalitesi sorunlu olabilir.`);
+    score += rec.score; technical.push(`Reception: ${rec.text}.`);
+    if(rec.score > 0) positives.push(`Reception olumlu: taraflar arasında sembolik kabul var. Bunu “konu soru sahibine cevap verebiliyor” şeklinde okuruz.`);
+    if(rec.score < 0) negatives.push(`Reception olumsuz: taraflar birbirini rahat taşımıyor. Bu, sonucun daha zor veya memnuniyetsiz olabileceğini gösterir.`);
+    for(const w of radical){ score -= 8; negatives.push(w.text); }
+    if(a.ctx.category === 'investment') applyInvestmentRules(a, {scoreRef:{get:()=>score,set:v=>score=v}, positives, negatives, technical});
+    if(a.ctx.category === 'relationship') applyRelationshipRules(a, {scoreRef:{get:()=>score,set:v=>score=v}, positives, negatives, technical});
+    const timing = estimateTiming(mainAsp || moonAspTarget || (moonInfo.next ? {p1:'Moon',p2:moonInfo.next.planet,angle:moonInfo.next.aspect.angle,orb:moonInfo.next.distance,applying:true,name:moonInfo.next.aspect.name,type:moonInfo.next.aspect.type} : null), positions, q, t);
+    score = clamp(Math.round(score), 0, 100);
+    const verdict = verdictFromScore(score);
+    bullets.push(...positives.slice(0,8).map(x=>({type:'good',text:x})));
+    bullets.push(...negatives.slice(0,8).map(x=>({type:'bad',text:x})));
+    return {score, verdict, positives, negatives, technical, mainAspect:mainAsp, moonAspectTarget:moonAspTarget, moonAspectQuerent:moonAspQ, reception:rec, timing, bullets};
+  }
+  function applyInvestmentRules(a, r){
+    const {positions, sigs, ascSign, aspects} = a;
+    const moneySign = (ascSign + 2 - 1) % 12, specSign = (ascSign + 5 - 1) % 12, riskSign = (ascSign + 8 - 1) % 12, gainSign=(ascSign+11-1)%12;
+    const moneyR = RULERS[moneySign], specR = RULERS[specSign], riskR = RULERS[riskSign], gainR = RULERS[gainSign];
+    r.technical.push(`Yatırım okuması: 2. ev para (${PNAME[moneyR]}), 5. ev spekülatif hamle (${PNAME[specR]}), 8. ev risk/kayıp (${PNAME[riskR]}), 11. ev kazanç beklentisi (${PNAME[gainR]}).`);
+    const moonRisk = getAspect(aspects, 'Moon', riskR);
+    const moneySpec = getAspect(aspects, moneyR, specR);
+    const gainSpec = getAspect(aspects, gainR, specR);
+    let score = r.scoreRef.get();
+    if(moneySpec && moneySpec.applying && moneySpec.type==='good'){ score += 10; r.positives.push(`Para göstergesi ${PNAME[moneyR]} ile spekülatif yatırım göstergesi ${PNAME[specR]} arasında destekleyici yaklaşan açı var. Bunu “para konuya kontrollü bağlanabiliyor” diye okuruz.`); }
+    if(moneySpec && moneySpec.applying && moneySpec.type==='bad'){ score -= 8; r.negatives.push(`Para göstergesi ile spekülatif yatırım göstergesi sert açıya gidiyor. Bu, girişin maliyet/risk baskısı taşıyabileceğini gösterir.`); }
+    if(gainSpec && gainSpec.applying && gainSpec.type==='good'){ score += 9; r.positives.push(`11. ev kazanç göstergesi spekülatif yatırım tarafıyla destekli bağ kuruyor. Beklenen getiri tarafı tamamen boş değil.`); }
+    if(moonRisk && moonRisk.applying && moonRisk.type==='bad'){ score -= 12; r.negatives.push(`Ay risk/kayıp göstergesiyle sert temasa gidiyor. Yatırım sorusunda bu, acele ve büyük pozisyon için ciddi uyarıdır.`); }
+    if(positions[riskR].strength > 10){ score -= 7; r.negatives.push(`8. ev/risk göstergesi güçlü. Risk tarafı görünür ve aktif; bu her zaman kötü sonuç demek değildir ama kontrolsüz girişe karşı uyarıdır.`); }
+    r.scoreRef.set(score);
+  }
+  function applyRelationshipRules(a, r){
+    const {positions, sigs} = a;
+    let score = r.scoreRef.get();
+    if(positions[sigs.targetRuler].retro){ score -= 8; r.negatives.push(`Karşı taraf göstergesi retro. Bu, karşı tarafın kararsız, geri çekilen veya geçmiş meseleyle meşgul olduğunu gösterebilir.`); }
+    r.scoreRef.set(score);
+  }
+  function estimateTiming(asp, positions, q, t){
+    if(!asp || !asp.applying) return {text:'Net zamanlama çıkarmak için yaklaşan ana bağlantı zayıf. Bu yüzden süre tahmini güvenilir değil.', units:null};
+    const deg = Math.max(0.2, asp.orb || 1);
+    const p = positions[asp.p1 || q] || positions.Moon;
+    const mode = signMode(p.sign);
+    const angular = [1,4,7,10].includes(p.house);
+    let unit = 'gün';
+    if(angular && mode === 'cardinal') unit = 'saat/gün';
+    else if(mode === 'fixed' && !angular) unit = 'hafta/ay';
+    else if(mode === 'fixed') unit = 'hafta';
+    else if(!angular) unit = 'gün/hafta';
+    return {text:`Yaklaşan bağlantıda yaklaşık ${deg.toFixed(1)}° mesafe var. ${SIGNS[p.sign]} burcunun niteliği ve ${p.house}. ev konumu nedeniyle zamanlama sembolik olarak ${deg.toFixed(0)} ${unit} bandı gibi okunabilir. Bu kesin takvim değil, horary sembolizmidir.`, units:unit, deg};
+  }
+  function signMode(s){ return ['cardinal','fixed','mutable'][s%3]; }
+  function verdictFromScore(score){
+    if(score >= 85) return {label:'GÜÇLÜ EVET', cls:'good', desc:'Harita olumlu göstergeleri belirgin şekilde öne çıkarıyor.'};
+    if(score >= 70) return {label:'EVET AMA ŞARTLI', cls:'good', desc:'Olumlu taraf ağır basıyor; yine de bazı koşullar veya gecikmeler var.'};
+    if(score >= 55) return {label:'ZAYIF EVET / DİKKATLİ İLERLE', cls:'warn', desc:'Olumlu işaret var ama tam güvenli değil. Küçük adım, teyit veya bekleme daha doğru olabilir.'};
+    if(score >= 45) return {label:'BELİRSİZ / BEKLE', cls:'warn', desc:'Harita net sonuç vermiyor. Soru veya durum olgunlaşmamış olabilir.'};
+    if(score >= 30) return {label:'ZAYIF HAYIR', cls:'bad', desc:'Olumsuz ve engelleyici göstergeler daha ağır.'};
+    return {label:'GÜÇLÜ HAYIR', cls:'bad', desc:'Harita mevcut şartlarda destek vermiyor.'};
+  }
+  function clamp(x,a,b){ return Math.max(a, Math.min(b,x)); }
+
+  function renderAll(a){
+    $('mainResult').classList.remove('hidden'); $('report').classList.remove('hidden'); $('answerCard').classList.remove('hidden');
+    $('kTime').textContent = a.ctx.date.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+    $('kLoc').textContent = `${a.ctx.lat.toFixed(2)}, ${a.ctx.lon.toFixed(2)}`;
+    $('kAsc').textContent = fmtShort(a.asc);
+    $('kMoon').textContent = fmtShort(a.positions.Moon.lon);
+    const v = a.rule.verdict;
+    $('verdict').textContent = v.label;
+    $('scoreRing').textContent = a.rule.score + '/100';
+    const deg = Math.round(a.rule.score/100*360);
+    const color = a.rule.score>=70 ? 'var(--green)' : a.rule.score>=45 ? 'var(--yellow)' : 'var(--red)';
+    $('scoreRing').style.background = `conic-gradient(${color} 0deg, ${color} ${deg}deg, rgba(255,255,255,.08) ${deg}deg)`;
+    $('answerCard').classList.toggle('badish', a.rule.score < 55);
+    $('answerPills').innerHTML = `<span class="pill">${escapeHtml(a.categoryInfo.name)}</span><span class="pill">ASC ${fmtDeg(a.asc)}</span><span class="pill">MC ${fmtDeg(a.mc)}</span><span class="pill">${Intl.DateTimeFormat().resolvedOptions().timeZone || 'yerel saat'}</span>`;
+    $('shortAnswer').innerHTML = `<h3>Kısa hüküm</h3><p><b>${escapeHtml(v.label)}.</b> ${escapeHtml(v.desc)}</p><p>${escapeHtml(shortConclusion(a))}</p>`;
+    $('chartMeta').textContent = `${a.ctx.date.toLocaleDateString('tr-TR')} · ${a.ctx.date.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})}`;
+    renderPlanetTable(a);
+    renderAspectTable(a);
+    drawChart(a);
+    renderReport(a);
+  }
+  function shortConclusion(a){
+    const s=a.rule.score;
+    if(a.ctx.category==='investment'){
+      if(s>=70) return 'Yatırım sorusu için harita destek veriyor; yine de bunu teknik/fundamental analiz yerine koyma. Pozitif cevap, kontrolsüz tam pozisyon anlamına gelmez.';
+      if(s>=55) return 'Yatırım tarafında tamamen kapalı bir görüntü yok; fakat risk ve belirsizlik yüksek. Daha iyi teyit veya küçük kademe mantığı daha uygun görünür.';
+      if(s>=45) return 'Bu harita yatırım için net sinyal vermiyor. Soru erken, piyasa koşulu karışık veya risk göstergesi baskın olabilir.';
+      return 'Yatırım için mevcut horary desteği zayıf. Para koruma ve risk azaltma tarafı daha ağır basıyor.';
+    }
+    if(s>=70) return 'Ana temsilciler arasında bağlantı var ve Ay akışı destekliyor. Yine de kategoriye özel zayıf göstergeler ayrıca okunmalı.';
+    if(s>=55) return 'Olumlu ve olumsuz işaretler birlikte çalışıyor. Sonucun gelebilmesi için şart, zaman veya ek teyit gerekebilir.';
+    if(s>=45) return 'Harita net konuşmuyor. Beklemek, soruyu daha netleştiğinde tekrar sormak veya dış koşulları izlemek daha doğru.';
+    return 'Engelleyici göstergeler daha baskın. Mevcut şartlarla olumlu sonuç ihtimali zayıf görünüyor.';
+  }
+  function renderPlanetTable(a){
+    const rows = PLANETS.map(p=>{
+      const x=a.positions[p]; const cls=x.strength>10?'good':x.strength<-10?'bad':'warn';
+      return `<tr><td>${x.glyph} ${x.name}</td><td>${fmtDeg(x.lon)}</td><td>${x.house}. ev</td><td class="${cls}">${x.strength}</td><td>${escapeHtml(x.dignityText)}</td></tr>`;
+    }).join('');
+    $('planetTable').innerHTML = `<thead><tr><th>Gezegen</th><th>Konum</th><th>Ev</th><th>Güç</th><th>Durum</th></tr></thead><tbody>${rows}</tbody>`;
+  }
+  function renderAspectTable(a){
+    const relevant = a.aspects.slice(0,18);
+    const rows = relevant.map(x=>`<tr><td>${PGLYPH[x.p1]} ${PNAME[x.p1]}</td><td>${x.glyph} ${x.name}</td><td>${PGLYPH[x.p2]} ${PNAME[x.p2]}</td><td class="${x.applying?'good':'muted'}">${x.applying?'Yaklaşan':'Ayrılan'}</td><td>${x.orb.toFixed(2)}°</td></tr>`).join('');
+    $('aspectTable').innerHTML = `<thead><tr><th>1</th><th>Açı</th><th>2</th><th>Durum</th><th>Orb</th></tr></thead><tbody>${rows || '<tr><td colspan="5" class="muted">Belirgin açı yok.</td></tr>'}</tbody>`;
+  }
+  function drawChart(a){
+    const canvas=$('chart'), ctx=canvas.getContext('2d'), W=canvas.width,H=canvas.height,cx=W/2,cy=H/2;
+    ctx.clearRect(0,0,W,H);
+    const rOuter=310,rSign=286,rHouse=252,rPlanet=210,rAspect=160;
+    ctx.save();
+    ctx.translate(cx,cy);
+    ctx.strokeStyle='rgba(255,255,255,.14)';ctx.lineWidth=1.2;
+    [rOuter,rSign,rHouse,rPlanet].forEach(r=>{ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.stroke();});
+    function ang(lon){ return (norm360(lon - a.asc) + 180) * DEG; }
+    // whole sign cusps
+    for(let i=0;i<12;i++){
+      const cusp = a.houses[i].sign*30;
+      const A=ang(cusp);
+      ctx.beginPath();ctx.moveTo(Math.cos(A)*rHouse,Math.sin(A)*rHouse);ctx.lineTo(Math.cos(A)*rOuter,Math.sin(A)*rOuter);ctx.strokeStyle='rgba(255,255,255,.11)';ctx.stroke();
+      const mid = cusp + 15; const M=ang(mid);
+      ctx.fillStyle='rgba(237,245,255,.82)';ctx.font='22px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(SIGN_GLYPHS[signOf(mid)], Math.cos(M)*rSign, Math.sin(M)*rSign);
+      ctx.fillStyle='rgba(143,168,197,.85)';ctx.font='12px Inter,Arial';ctx.fillText((i+1)+'. ev', Math.cos(M)*(rHouse-22), Math.sin(M)*(rHouse-22));
+    }
+    // ASC MC lines
+    drawAxis(180*DEG,'ASC', '#22d3ee');
+    drawAxis(ang(a.mc),'MC', '#fbbf24');
+    function drawAxis(A,label,color){ ctx.beginPath();ctx.moveTo(Math.cos(A)*55,Math.sin(A)*55);ctx.lineTo(Math.cos(A)*rOuter,Math.sin(A)*rOuter);ctx.strokeStyle=color;ctx.lineWidth=2;ctx.stroke();ctx.fillStyle=color;ctx.font='bold 13px Inter,Arial';ctx.fillText(label,Math.cos(A)*(rOuter-24),Math.sin(A)*(rOuter-24));ctx.lineWidth=1.2; }
+    // aspects
+    a.aspects.filter(x=>x.applying).slice(0,16).forEach(x=>{
+      const A=ang(a.positions[x.p1].lon), B=ang(a.positions[x.p2].lon);
+      ctx.beginPath();ctx.moveTo(Math.cos(A)*rAspect,Math.sin(A)*rAspect);ctx.lineTo(Math.cos(B)*rAspect,Math.sin(B)*rAspect);
+      ctx.strokeStyle = x.type==='good' ? 'rgba(54,211,153,.42)' : x.type==='bad' ? 'rgba(251,113,133,.40)' : 'rgba(96,165,250,.34)';
+      ctx.lineWidth=1.1;ctx.stroke();
+    });
+    // planets with collision offset
+    const used=[];
+    PLANETS.forEach((p,idx)=>{
+      const lon=a.positions[p].lon; let A=ang(lon); let rr=rPlanet;
+      for(const u of used){ if(Math.abs(norm180((A/DEG)-(u.A/DEG)))<7) rr -= 22; }
+      used.push({A,rr});
+      ctx.beginPath();ctx.arc(Math.cos(A)*rr,Math.sin(A)*rr,16,0,Math.PI*2);ctx.fillStyle='rgba(7,16,25,.92)';ctx.fill();ctx.strokeStyle='rgba(255,255,255,.22)';ctx.stroke();
+      ctx.fillStyle=p==='Moon'?'#fbbf24':p==='Sun'?'#fbbf24':'#edf5ff';ctx.font='24px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(PGLYPH[p],Math.cos(A)*rr,Math.sin(A)*rr+1);
+      ctx.fillStyle='rgba(207,224,247,.92)';ctx.font='10px Inter,Arial';ctx.fillText(fmtShort(lon),Math.cos(A)*(rr-34),Math.sin(A)*(rr-34));
+    });
+    ctx.restore();
+  }
+  function renderReport(a){
+    const cat=a.categoryInfo, r=a.rule, pos=a.positions, sig=a.sigs;
+    const moonNext = a.moonInfo.voidOfCourse ? 'Ay boşlukta: burçtan çıkmadan klasik ana gezegenlerle yeni temel açı kurmuyor.' : `Ay'ın burçtan çıkmadan ilk teması: ${PNAME[a.moonInfo.next.planet]} ile ${a.moonInfo.next.aspect.name}, yaklaşık ${a.moonInfo.next.distance.toFixed(1)}° sonra.`;
+    const positives = r.positives.map(x=>`<li>${escapeHtml(x)}</li>`).join('') || '<li>Belirgin güçlü pozitif gösterge az.</li>';
+    const negatives = r.negatives.map(x=>`<li>${escapeHtml(x)}</li>`).join('') || '<li>Belirgin ağır negatif gösterge az.</li>';
+    const technical = r.technical.map(x=>`<li>${escapeHtml(x)}</li>`).join('');
+    const q = escapeHtml(a.ctx.question);
+    const loc = `${a.ctx.lat.toFixed(5)}, ${a.ctx.lon.toFixed(5)}`;
+    const dateTxt = a.ctx.date.toLocaleString('tr-TR');
+    const html = `
+      <div class="section">
+        <h3>1) Soru ve temel harita bilgisi</h3>
+        <p><b>Soru:</b> ${q}</p>
+        <p><b>Kategori:</b> ${escapeHtml(cat.name)}. Bu kategoride kullanılan ana konu evi: <b>${cat.targetHouse}. ev</b> (${escapeHtml(cat.targetLabel)}).</p>
+        <p><b>Zaman:</b> ${escapeHtml(dateTxt)} — cihaz saatinden otomatik alındı. <b>Konum:</b> ${loc} — tarayıcı konumundan otomatik alındı.</p>
+        <p><b>ASC:</b> ${fmtDeg(a.asc)}. <b>MC:</b> ${fmtDeg(a.mc)}. V1 sürümünde evler Whole Sign yöntemiyle okunur.</p>
+      </div>
+      <div class="section">
+        <h3>2) Bu soru hangi göstergelerden okunur?</h3>
+        <p>${escapeHtml(cat.explain)}</p>
+        <ul>${technical}</ul>
+        <p>Burada temel mantık şudur: 1. ev yöneticisi ve Ay soru sahibini gösterir. Seçilen kategorinin ana ev yöneticisi ise sorulan konunun kendisini gösterir. Bu iki taraf arasında yaklaşan olumlu açı varsa cevap güçlenir; bağlantı yoksa veya ayrılan açı varsa sonuç zayıflar.</p>
+      </div>
+      <div class="section">
+        <h3>3) Ana bağlantı</h3>
+        <p><b>${PNAME[sig.querentRuler]}</b> ile <b>${PNAME[sig.targetRuler]}</b> arasındaki ana durum: <b>${escapeHtml(aspectLabel(r.mainAspect))}</b>.</p>
+        <p>Bunu şöyle okuruz: soru sahibi göstergesi ile sorulan konunun göstergesi birbirine yaklaşıyorsa konu gelişmeye açık olur. Açı ayrılıyorsa fırsat geçmiş, bağ zayıflamış veya soru mevcut gerçekliği arkadan takip ediyor olabilir.</p>
+      </div>
+      <div class="section">
+        <h3>4) Ay'ın anlattığı süreç</h3>
+        <p>Ay ${fmtDeg(pos.Moon.lon)} konumunda ve ${pos.Moon.house}. evde. Ay horary'de olayın akışını ve sorunun nereye doğru hareket ettiğini gösterir.</p>
+        <p><b>${escapeHtml(moonNext)}</b></p>
+        <p>Ay destekleyici bir açıya gidiyorsa süreç açılır; sert açıya gidiyorsa konu gündeme gelir ama stres, gecikme veya bedel üretir. Ay boşlukta ise çoğu klasik yorumda “beklenen değişim kolay gelmez” şeklinde okunur.</p>
+      </div>
+      <div class="section">
+        <h3>5) Güçlü göstergeler</h3>
+        <ul>${positives}</ul>
+      </div>
+      <div class="section">
+        <h3>6) Zayıf / dikkat isteyen göstergeler</h3>
+        <ul>${negatives}</ul>
+      </div>
+      <div class="section">
+        <h3>7) Zamanlama</h3>
+        <p>${escapeHtml(r.timing.text)}</p>
+      </div>
+      <div class="section">
+        <h3>8) Net cevap</h3>
+        <p><b>${escapeHtml(r.verdict.label)} — ${r.score}/100.</b> ${escapeHtml(shortConclusion(a))}</p>
+        <p>Bu sonuç deterministik bir kehanet değil; seçilen horary kurallarının bu haritada neyi ağır bastırdığını anlatan kural tabanlı yorumdur.</p>
+      </div>
+    `;
+    $('report').innerHTML = html;
+    lastReportText = stripHtml(`Horary Offline Tool v2\n\nSoru: ${a.ctx.question}\nKategori: ${cat.name}\nZaman: ${dateTxt}\nKonum: ${loc}\nASC: ${fmtDeg(a.asc)}\nMC: ${fmtDeg(a.mc)}\n\nCevap: ${r.verdict.label} — ${r.score}/100\n\nKısa yorum: ${shortConclusion(a)}\n\nAna bağlantı: ${PNAME[sig.querentRuler]} ile ${PNAME[sig.targetRuler]}: ${aspectLabel(r.mainAspect)}\nAy: ${fmtDeg(pos.Moon.lon)} / ${pos.Moon.house}. ev. ${moonNext}\n\nGüçlü göstergeler:\n- ${r.positives.join('\n- ')}\n\nZayıf göstergeler:\n- ${r.negatives.join('\n- ')}\n\nZamanlama: ${r.timing.text}`);
+  }
+  function copyReport(){
+    if(!lastReportText) return;
+    navigator.clipboard.writeText(lastReportText).then(()=>{
+      $('copyBox').classList.add('show'); setTimeout(()=>$('copyBox').classList.remove('show'), 1500);
+    }).catch(()=>alert('Kopyalama başarısız.'));
+  }
+  function escapeHtml(s){ return String(s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+  function stripHtml(s){ return String(s).replace(/<[^>]*>/g,''); }
+
+  init();
+})();
+</script>
+</body>
+</html>

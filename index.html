@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Horary Offline Tool v2</title>
+  <title>Horary AI Router Tool v7</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
   :root{
@@ -75,6 +75,44 @@
     .wrap{padding:0 14px 34px} header{padding-top:22px}.brand .logo{font-size:32px}.hero{padding:22px 0 14px}.hero p{font-size:13.5px}.inputCard{padding:14px}.controls{display:grid;grid-template-columns:1fr 1fr}.primary{grid-column:1 / -1; width:100%;}.microInfo{grid-template-columns:1fr 1fr}.kpiStrip{grid-template-columns:1fr 1fr}.answer{padding:18px}.answerTop{align-items:center}.scoreRing{width:74px;height:74px;font-size:16px}h2{font-size:28px}.section p,#report p,#report li{font-size:13.5px}.mainGrid{padding:0 12px 12px}details.tech>summary{font-size:20px;padding:14px} table{min-width:520px}.card{padding:14px}
   }
   @media(max-width:420px){.controls{grid-template-columns:1fr}.small{width:100%}.microInfo{grid-template-columns:1fr}.kpiStrip{grid-template-columns:1fr 1fr}.answerTop{gap:10px}.scoreRing{width:68px;height:68px;font-size:14px}textarea{min-height:104px}.hero h1{font-size:33px}}
+
+  .followCard{padding:16px; margin-top:14px; background:var(--card); border:1px solid var(--line); border-radius:var(--r); box-shadow:0 16px 36px rgba(54,43,27,.055)}
+  .followIntro{font-size:13px; line-height:1.7; color:var(--ink3); margin:-2px 0 10px; font-weight:350;}
+  #followupInput{min-height:86px; font-size:14px;}
+  .followActions{display:flex; gap:9px; flex-wrap:wrap; margin-top:10px;}
+  .followBtn{background:var(--accent); color:white; padding:11px 15px; font-size:13px; font-weight:800; border-radius:12px; flex:1 1 210px;}
+  .followBtn:hover{background:#7e3217;}
+  .ghostBtn{background:transparent; color:var(--ink3); border:1px solid var(--paper3); padding:10px 13px; font-size:13px; font-weight:700; border-radius:12px;}
+  .followThread{margin-top:13px; display:flex; flex-direction:column; gap:10px;}
+  .qa{border:1px solid var(--paper3); border-radius:13px; overflow:hidden; background:var(--paper);}
+  .qaQ{padding:11px 12px; border-bottom:1px solid var(--paper3); font-size:13px; line-height:1.55; color:var(--ink); font-weight:750; background:rgba(255,255,255,.45)}
+  .qaA{padding:13px 12px; font-size:13.5px; line-height:1.8; color:var(--ink2); font-weight:350; white-space:normal;}
+  .qaA h4{font-family:var(--serif); font-size:20px; font-weight:400; margin:2px 0 7px; letter-spacing:-.02em; color:var(--ink)}
+  .qaA p{margin:0 0 10px}.qaA ul{padding-left:18px; margin:6px 0 10px}.qaA li{margin:4px 0}
+  .brutalBox{background:var(--ink); color:var(--paper); border-radius:14px; padding:15px; margin:10px 0;}
+  .brutalBox p{color:rgba(246,241,232,.78)!important;}
+  .percentGrid{display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin:10px 0 14px;}
+  .percentItem{background:var(--paper); border:1px solid var(--paper3); border-radius:12px; padding:10px;}
+  .percentItem .num{font-family:var(--serif); font-size:26px; line-height:1; color:var(--ink); letter-spacing:-.03em}.percentItem .txt{font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink4); margin-top:6px; font-weight:800;}
+  .signalList{display:grid; gap:8px; margin:10px 0 14px;}.signalLine{background:var(--paper); border:1px solid var(--paper3); border-radius:12px; padding:10px 11px; font-size:13px; line-height:1.65; color:var(--ink2); font-weight:350}.signalLine b{color:var(--ink)}
+  .aiPromptBox{background:var(--paper); border:1px dashed var(--paper3); border-radius:12px; padding:11px; font-size:12px; line-height:1.55; color:var(--ink3); margin-top:10px;}
+
+  .aiCard{padding:16px; margin-top:14px; background:var(--card); border:1px solid var(--line); border-radius:var(--r); box-shadow:0 16px 36px rgba(54,43,27,.055)}
+  .aiIntro{font-size:13px; line-height:1.7; color:var(--ink3); margin:-2px 0 12px; font-weight:350;}
+  .aiControls{display:flex; gap:9px; flex-wrap:wrap; align-items:center; margin-top:10px;}
+  .aiBtn{background:var(--ink); color:var(--paper); padding:11px 15px; font-size:13px; font-weight:800; border-radius:12px; flex:1 1 230px;}
+  .aiBtn:hover{background:var(--ink2);}
+  .aiFollowBtn{background:var(--accent); color:#fff; padding:11px 15px; font-size:13px; font-weight:800; border-radius:12px; flex:1 1 210px;}
+  .aiFollowBtn:hover{background:#7e3217;}
+  .modelSelect{flex:1 1 210px; margin:0; padding:10px 11px; font-size:13px; background:#fff;}
+  .endpointInput{width:100%; margin-top:8px; padding:10px 11px; font-size:13px; background:#fff; border:1px solid var(--paper3); border-radius:12px; color:var(--ink); outline:0;}
+  .endpointInput:focus{border-color:var(--ink3); box-shadow:0 0 0 3px rgba(17,16,14,.06)}
+  .aiStatus{margin-top:10px; font-size:12px; line-height:1.6; color:var(--ink3);}
+  .aiOutput{margin-top:12px; padding:15px; background:var(--paper); border:1px solid var(--paper3); border-radius:12px; font-size:14px; line-height:1.75; color:var(--ink2); white-space:pre-wrap; display:none;}
+  .aiOutput.show{display:block;}
+  .privacyNote{font-size:11.5px; color:var(--ink4); line-height:1.55; margin-top:9px;}
+  @media(max-width:520px){.percentGrid{grid-template-columns:1fr}.followActions,.aiControls{display:grid; grid-template-columns:1fr}.followBtn,.ghostBtn,.aiBtn,.aiFollowBtn,.modelSelect{width:100%}}
+
 </style>
 </head>
 <body>
@@ -82,14 +120,14 @@
   <header>
     <div class="brand">
       <div class="logo">Hora<em>ry</em></div>
-      <div class="sub">Offline soru haritası</div>
+      <div class="sub">Horary + Free AI Router</div>
     </div>
     <div class="badge" id="clock">—</div>
   </header>
 
   <section class="hero">
     <h1>Soruyu yaz,<br><em>an haritasını</em> oku.</h1>
-    <p>API yok, yapay zekâ yok. Saat cihazdan, konum tarayıcıdan alınır; seçtiğin kategoriye göre kural tabanlı uzun horary yorumu üretilir.</p>
+    <p>Haritayı tarayıcıda hesaplar, sonra kendi ücretsiz model-router sunucuna gönderip uzun, agresif ve detaylı AI yorumu üretir. Saat ve konum otomatik alınır; manuel konum yok.</p>
   </section>
 
   <section class="inputCard">
@@ -143,6 +181,44 @@
 
   <section id="report" class="card hidden"></section>
 
+  <section id="aiCard" class="aiCard hidden">
+    <div class="cardTitle">
+      <b>AI Brutal yorum</b>
+      <span class="pill">Router · free model fallback</span>
+    </div>
+    <p class="aiIntro">Offline rapor temel iskelettir. Bu bölüm aynı harita verisini senin Cloudflare Worker model-router’ına gönderir. Model horary hesaplamaz; bizim tool’un çıkardığı teknik sinyal ve yüzdeleri senin istediğin gibi uzun, agresif, net bir rapora çevirir.</p>
+    <div class="aiControls">
+      <select id="aiProvider" class="modelSelect" aria-label="AI sağlayıcı">
+        <option value="auto" selected>Auto Router — çalışan ilk free model</option>
+        <option value="gemini">Gemini free key</option>
+        <option value="groq">Groq free key</option>
+        <option value="openrouter">OpenRouter free models</option>
+        <option value="workersai">Cloudflare Workers AI</option>
+      </select>
+      <button id="aiBtn" class="aiBtn">AI Brutal Yorumu Üret</button>
+    </div>
+    <input id="aiEndpoint" class="endpointInput" placeholder="Worker URL: https://horary-slave.akiftolgagonen.workers.dev/analyze" />
+    <div id="aiStatus" class="aiStatus">AI router hazır. Endpoint otomatik tanımlı; gerekirse gelişmiş alandan değiştirilebilir.</div>
+    <div id="aiOutput" class="aiOutput"></div>
+    <p class="privacyNote">Not: Offline modda veri dışarı gitmez. AI modunda soru, harita sinyalleri ve yüzdeler senin Worker’ına, oradan seçilen ücretsiz modele gider. API key HTML içinde görünmez; Worker secret olarak saklanır. Ücretsiz sağlayıcıların limitleri olabilir.</p>
+  </section>
+
+  <section id="followCard" class="followCard hidden">
+    <div class="cardTitle">
+      <b>Devam sorusu</b>
+      <span class="pill">Aynı haritadan ilerler</span>
+    </div>
+    <p class="followIntro">İlk horary haritası açıldıktan sonra burada devam sorusu sor. Yeni saat/konum alınmaz; aynı soru anının haritası üzerinden daha spesifik cevap verir. Örnek: “O geri döner mi?”, “Ben bitirmeli miyim?”, “1 ay içinde ne olur?”</p>
+    <textarea id="followupInput" placeholder="Devam sorunu yaz..."></textarea>
+    <div class="followActions">
+      <button id="followupBtn" class="followBtn">Offline Devam Yorumu</button>
+      <button id="aiFollowupBtn" class="aiFollowBtn">AI ile Devam</button>
+      <button id="clearFollowups" class="ghostBtn">Devamı Temizle</button>
+    </div>
+    <div id="followupThread" class="followThread"></div>
+  </section>
+
+
   <details class="tech hidden" id="mainResult">
     <summary>Teknik harita <span>Gezegenler, açılar, chart</span></summary>
     <div class="mainGrid">
@@ -172,7 +248,7 @@
   </details>
 </div>
 <footer>
-  <div>Offline horary yorum aracı · Tek dosya</div>
+  <div>Offline horary yorum aracı · Brutal yorum motoru · Tek dosya</div>
   <div class="footerBrand">Hora<em>ry</em></div>
 </footer>
 <div class="copyBox" id="copyBox">Rapor kopyalandı.</div>
@@ -181,6 +257,7 @@
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
+  const DEFAULT_AI_ENDPOINT = 'https://horary-slave.akiftolgagonen.workers.dev/analyze';
   const DEG = Math.PI / 180, RAD = 180 / Math.PI;
   const SIGNS = ['Koç','Boğa','İkizler','Yengeç','Aslan','Başak','Terazi','Akrep','Yay','Oğlak','Kova','Balık'];
   const SIGN_GLYPHS = ['♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓'];
@@ -209,6 +286,8 @@
     travel:{name:'Yolculuk / Seyahat', targetHouse:9, targetLabel:'uzak yolculuk / seyahat', secondary:[3,4,10], explain:'Seyahat sorularında 9. ev uzak yolculuğu, 3. ev kısa yol/ulaşımı, 4. ev dönüş ve güvenli varışı gösterir.'}
   };
   let lastReportText = '';
+  let lastAnalysis = null;
+  let followupHistory = [];
 
   function init(){
     $('question').value = localStorage.getItem('horary_q') || '';
@@ -217,7 +296,15 @@
     $('category').addEventListener('change', () => localStorage.setItem('horary_cat', $('category').value));
     $('analyzeBtn').addEventListener('click', analyzeNow);
     $('copyReport').addEventListener('click', copyReport);
-    $('clearBtn').addEventListener('click', () => { $('question').value=''; localStorage.removeItem('horary_q'); });
+    $('clearBtn').addEventListener('click', () => { $('question').value=''; localStorage.removeItem('horary_q'); clearFollowups(true); $('answerCard').classList.add('hidden'); $('report').classList.add('hidden'); $('mainResult').classList.add('hidden'); $('followCard').classList.add('hidden'); $('aiCard').classList.add('hidden'); $('aiOutput').classList.remove('show'); $('aiOutput').textContent=''; $('aiStatus').textContent='AI router hazır. Endpoint otomatik tanımlı.'; });
+    $('followupBtn').addEventListener('click', askFollowup);
+    $('aiFollowupBtn').addEventListener('click', askAIFollowup);
+    $('aiBtn').addEventListener('click', generateAIAnswer);
+    $('aiEndpoint').value = localStorage.getItem('horary_ai_endpoint') || DEFAULT_AI_ENDPOINT;
+    if(!localStorage.getItem('horary_ai_endpoint')) localStorage.setItem('horary_ai_endpoint', DEFAULT_AI_ENDPOINT);
+    setAIStatus('AI router bağlı: horary-slave.akiftolgagonen.workers.dev', 'ok');
+    $('aiEndpoint').addEventListener('change', () => { localStorage.setItem('horary_ai_endpoint', $('aiEndpoint').value.trim()); setAIStatus('Worker URL kaydedildi.', 'ok'); });
+    $('clearFollowups').addEventListener('click', () => clearFollowups(false));
     tickClock(); setInterval(tickClock, 1000);
     log('Araç hazır. Analiz için soru yaz, kategori seç, butona bas.');
   }
@@ -231,26 +318,55 @@
     const category = $('category').value;
     if(!question){ showStatus('Önce soru yaz.', 'error'); return; }
     if(!navigator.geolocation){ showStatus('Tarayıcı konum API desteklemiyor. Bu sürüm manuel konum almadığı için analiz yapılamaz.', 'error'); return; }
-    setBusy(true); showStatus('Konum izni bekleniyor...', 'notice'); log('Konum isteniyor.');
+    if(!window.isSecureContext){
+      showStatus('Bu sayfa güvenli bağlamda açılmamış görünüyor. iPhone konum izni için link <b>https://...github.io/horary/</b> formatında olmalı; <b>github.com</b>, <b>raw</b> veya <b>file://</b> olmaz.', 'error');
+      return;
+    }
+    setBusy(true); showStatus('Konum izni bekleniyor. iPhone kullanıyorsan izin penceresi gelene kadar Safari açık kalsın...', 'notice'); log('Konum isteniyor. SecureContext='+String(window.isSecureContext)+', URL='+location.href);
     try{
       const pos = await getPosition();
       const date = new Date();
       const lat = pos.coords.latitude, lon = pos.coords.longitude;
-      log('Konum alındı: '+lat.toFixed(5)+', '+lon.toFixed(5));
+      log('Konum alındı: '+lat.toFixed(5)+', '+lon.toFixed(5)+' ±'+Math.round(pos.coords.accuracy||0)+'m');
       const analysis = computeHorary({question, category, date, lat, lon});
+      lastAnalysis = analysis;
+      clearFollowups(true);
       renderAll(analysis);
-      showStatus('Analiz tamamlandı. Konum ve saat otomatik kullanıldı.', 'ok');
+      showStatus('Analiz tamamlandı. Konum ve saat otomatik kullanıldı. Konum hassasiyeti yaklaşık ±'+Math.round(pos.coords.accuracy||0)+' m.', 'ok');
       $('copyReport').disabled = false;
     }catch(e){
       console.error(e);
-      showStatus('Konum alınamadı: '+escapeHtml(String(e.message || e))+'<br>Not: Bazı tarayıcılar <code>file://</code> dosyalarda konumu engeller. Dosyayı localhost/HTTPS üzerinden açmak gerekebilir.', 'error');
-      log('HATA: '+String(e.message || e));
+      const msg = geoErrorMessage(e);
+      showStatus(msg, 'error');
+      log('HATA: '+String(e && (e.message || e.name || e.code) || e));
     }finally{ setBusy(false); }
   }
   function getPosition(){
     return new Promise((resolve,reject)=>{
-      navigator.geolocation.getCurrentPosition(resolve, reject, {enableHighAccuracy:true, timeout:15000, maximumAge:30000});
+      // iOS Safari'de önce düşük hassasiyet istemek daha stabil çalışır.
+      // Yüksek hassasiyet bazı cihazlarda izin penceresi gelmeden timeout üretebilir.
+      const first = {enableHighAccuracy:false, timeout:30000, maximumAge:600000};
+      const second = {enableHighAccuracy:true, timeout:30000, maximumAge:0};
+      navigator.geolocation.getCurrentPosition(resolve, () => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, second);
+      }, first);
     });
+  }
+  function geoErrorMessage(e){
+    let base = 'Konum alınamadı.';
+    if(e && e.code === 1) base = 'Konum izni reddedilmiş veya Safari için konum kapalı.';
+    else if(e && e.code === 2) base = 'iPhone konumu bulamadı. GPS/Wi‑Fi/sinyal tarafında geçici sorun olabilir.';
+    else if(e && e.code === 3) base = 'Konum isteği zaman aşımına uğradı. iPhone bazen ilk denemede konumu geç verir.';
+    else if(e && e.message) base = String(e.message);
+    const urlOk = location.protocol === 'https:' && location.hostname.endsWith('github.io');
+    return escapeHtml(base) +
+      '<br><br><b>iPhone kontrol listesi:</b>' +
+      '<br>1) Link <b>github.io</b> olmalı. Şu anki adres: <code>'+escapeHtml(location.href)+'</code>' +
+      '<br>2) Ayarlar → Gizlilik ve Güvenlik → Konum Servisleri → açık olmalı.' +
+      '<br>3) Aynı ekranda <b>Safari Websites</b> → <b>Sor</b> veya <b>Uygulamayı Kullanırken</b> olmalı.' +
+      '<br>4) Safari’de adres çubuğundaki <b>Aa</b> → <b>Website Settings / Web Sitesi Ayarları</b> → Location/Konum → <b>Ask/Sor</b> yapıp sayfayı yenile.' +
+      '<br>5) Daha önce reddedildiyse: Ayarlar → Safari → Gelişmiş → Website Data/Web Sitesi Verileri → bu siteyi sil; sonra Safari’yi kapatıp tekrar aç.' +
+      (urlOk ? '' : '<br><br><b>Önemli:</b> Bu link github.io gibi görünmüyor. GitHub repo sayfası değil, Pages linki açılmalı.');
   }
 
   function computeHorary(ctx){
@@ -600,7 +716,7 @@
   function clamp(x,a,b){ return Math.max(a, Math.min(b,x)); }
 
   function renderAll(a){
-    $('mainResult').classList.remove('hidden'); $('report').classList.remove('hidden'); $('answerCard').classList.remove('hidden');
+    $('mainResult').classList.remove('hidden'); $('report').classList.remove('hidden'); $('answerCard').classList.remove('hidden'); $('aiCard').classList.remove('hidden'); $('followCard').classList.remove('hidden');
     $('kTime').textContent = a.ctx.date.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
     $('kLoc').textContent = `${a.ctx.lat.toFixed(2)}, ${a.ctx.lon.toFixed(2)}`;
     $('kAsc').textContent = fmtShort(a.asc);
@@ -687,60 +803,418 @@
     ctx.restore();
   }
   function renderReport(a){
+    const html = buildBrutalReport(a);
+    $('report').innerHTML = html;
+    lastReportText = buildPlainTextReport(a);
+  }
+
+  function buildBrutalReport(a){
     const cat=a.categoryInfo, r=a.rule, pos=a.positions, sig=a.sigs;
-    const moonNext = a.moonInfo.voidOfCourse ? 'Ay boşlukta: burçtan çıkmadan klasik ana gezegenlerle yeni temel açı kurmuyor.' : `Ay'ın burçtan çıkmadan ilk teması: ${PNAME[a.moonInfo.next.planet]} ile ${a.moonInfo.next.aspect.name}, yaklaşık ${a.moonInfo.next.distance.toFixed(1)}° sonra.`;
-    const positives = r.positives.map(x=>`<li>${escapeHtml(x)}</li>`).join('') || '<li>Belirgin güçlü pozitif gösterge az.</li>';
-    const negatives = r.negatives.map(x=>`<li>${escapeHtml(x)}</li>`).join('') || '<li>Belirgin ağır negatif gösterge az.</li>';
-    const technical = r.technical.map(x=>`<li>${escapeHtml(x)}</li>`).join('');
     const q = escapeHtml(a.ctx.question);
     const loc = `${a.ctx.lat.toFixed(5)}, ${a.ctx.lon.toFixed(5)}`;
     const dateTxt = a.ctx.date.toLocaleString('tr-TR');
-    const html = `
+    const metrics = deriveMetrics(a);
+    const signalHtml = buildSignalLines(a).map(x=>`<div class="signalLine"><b>${escapeHtml(x.title)}:</b> ${escapeHtml(x.text)}</div>`).join('');
+    const pctHtml = Object.entries(metrics.public).map(([k,v])=>`<div class="percentItem"><div class="num">${Math.round(v)}%</div><div class="txt">${escapeHtml(k)}</div></div>`).join('');
+    const main = brutalMainVerdict(a, metrics);
+    const categoryBlock = categoryDeepDive(a, metrics);
+    const moonNext = moonNextText(a);
+    const positives = r.positives.map(x=>`<li>${escapeHtml(x)}</li>`).join('') || '<li>Belirgin güçlü pozitif gösterge az.</li>';
+    const negatives = r.negatives.map(x=>`<li>${escapeHtml(x)}</li>`).join('') || '<li>Belirgin ağır negatif gösterge az.</li>';
+    const technical = r.technical.map(x=>`<li>${escapeHtml(x)}</li>`).join('');
+    const aiPrompt = buildLLMPrompt(a, metrics).slice(0, 650) + '...';
+    return `
       <div class="section">
-        <h3>1) Soru ve temel harita bilgisi</h3>
+        <h3>1) Net hüküm</h3>
+        <div class="brutalBox"><p><b>${escapeHtml(main.headline)}</b></p><p>${escapeHtml(main.body)}</p></div>
+        <div class="percentGrid">${pctHtml}</div>
+      </div>
+      <div class="section">
+        <h3>2) Soru ve harita bilgisi</h3>
         <p><b>Soru:</b> ${q}</p>
-        <p><b>Kategori:</b> ${escapeHtml(cat.name)}. Bu kategoride kullanılan ana konu evi: <b>${cat.targetHouse}. ev</b> (${escapeHtml(cat.targetLabel)}).</p>
+        <p><b>Kategori:</b> ${escapeHtml(cat.name)}. Ana konu evi: <b>${cat.targetHouse}. ev</b> (${escapeHtml(cat.targetLabel)}).</p>
         <p><b>Zaman:</b> ${escapeHtml(dateTxt)} — cihaz saatinden otomatik alındı. <b>Konum:</b> ${loc} — tarayıcı konumundan otomatik alındı.</p>
-        <p><b>ASC:</b> ${fmtDeg(a.asc)}. <b>MC:</b> ${fmtDeg(a.mc)}. V1 sürümünde evler Whole Sign yöntemiyle okunur.</p>
+        <p><b>ASC:</b> ${fmtDeg(a.asc)}. <b>MC:</b> ${fmtDeg(a.mc)}. Ev sistemi: Whole Sign. Bu tool kader iddiası değil; horary sembollerini kural tabanlı okur.</p>
       </div>
       <div class="section">
-        <h3>2) Bu soru hangi göstergelerden okunur?</h3>
+        <h3>3) Şunu şuradan anlıyoruz</h3>
         <p>${escapeHtml(cat.explain)}</p>
+        <div class="signalList">${signalHtml}</div>
+      </div>
+      ${categoryBlock}
+      <div class="section">
+        <h3>Teknik iskelet</h3>
         <ul>${technical}</ul>
-        <p>Burada temel mantık şudur: 1. ev yöneticisi ve Ay soru sahibini gösterir. Seçilen kategorinin ana ev yöneticisi ise sorulan konunun kendisini gösterir. Bu iki taraf arasında yaklaşan olumlu açı varsa cevap güçlenir; bağlantı yoksa veya ayrılan açı varsa sonuç zayıflar.</p>
+        <p><b>Ana bağlantı:</b> ${PNAME[sig.querentRuler]} ile ${PNAME[sig.targetRuler]}: <b>${escapeHtml(aspectLabel(r.mainAspect))}</b>.</p>
+        <p><b>Ay:</b> ${fmtDeg(pos.Moon.lon)} / ${pos.Moon.house}. ev. ${escapeHtml(moonNext)}</p>
       </div>
       <div class="section">
-        <h3>3) Ana bağlantı</h3>
-        <p><b>${PNAME[sig.querentRuler]}</b> ile <b>${PNAME[sig.targetRuler]}</b> arasındaki ana durum: <b>${escapeHtml(aspectLabel(r.mainAspect))}</b>.</p>
-        <p>Bunu şöyle okuruz: soru sahibi göstergesi ile sorulan konunun göstergesi birbirine yaklaşıyorsa konu gelişmeye açık olur. Açı ayrılıyorsa fırsat geçmiş, bağ zayıflamış veya soru mevcut gerçekliği arkadan takip ediyor olabilir.</p>
-      </div>
-      <div class="section">
-        <h3>4) Ay'ın anlattığı süreç</h3>
-        <p>Ay ${fmtDeg(pos.Moon.lon)} konumunda ve ${pos.Moon.house}. evde. Ay horary'de olayın akışını ve sorunun nereye doğru hareket ettiğini gösterir.</p>
-        <p><b>${escapeHtml(moonNext)}</b></p>
-        <p>Ay destekleyici bir açıya gidiyorsa süreç açılır; sert açıya gidiyorsa konu gündeme gelir ama stres, gecikme veya bedel üretir. Ay boşlukta ise çoğu klasik yorumda “beklenen değişim kolay gelmez” şeklinde okunur.</p>
-      </div>
-      <div class="section">
-        <h3>5) Güçlü göstergeler</h3>
+        <h3>Güçlü göstergeler</h3>
         <ul>${positives}</ul>
       </div>
       <div class="section">
-        <h3>6) Zayıf / dikkat isteyen göstergeler</h3>
+        <h3>Zayıf / tehlikeli göstergeler</h3>
         <ul>${negatives}</ul>
       </div>
       <div class="section">
-        <h3>7) Zamanlama</h3>
+        <h3>Zamanlama</h3>
         <p>${escapeHtml(r.timing.text)}</p>
       </div>
       <div class="section">
-        <h3>8) Net cevap</h3>
-        <p><b>${escapeHtml(r.verdict.label)} — ${r.score}/100.</b> ${escapeHtml(shortConclusion(a))}</p>
-        <p>Bu sonuç deterministik bir kehanet değil; seçilen horary kurallarının bu haritada neyi ağır bastırdığını anlatan kural tabanlı yorumdur.</p>
-      </div>
-    `;
-    $('report').innerHTML = html;
-    lastReportText = stripHtml(`Horary Offline Tool v2\n\nSoru: ${a.ctx.question}\nKategori: ${cat.name}\nZaman: ${dateTxt}\nKonum: ${loc}\nASC: ${fmtDeg(a.asc)}\nMC: ${fmtDeg(a.mc)}\n\nCevap: ${r.verdict.label} — ${r.score}/100\n\nKısa yorum: ${shortConclusion(a)}\n\nAna bağlantı: ${PNAME[sig.querentRuler]} ile ${PNAME[sig.targetRuler]}: ${aspectLabel(r.mainAspect)}\nAy: ${fmtDeg(pos.Moon.lon)} / ${pos.Moon.house}. ev. ${moonNext}\n\nGüçlü göstergeler:\n- ${r.positives.join('\n- ')}\n\nZayıf göstergeler:\n- ${r.negatives.join('\n- ')}\n\nZamanlama: ${r.timing.text}`);
+        <h3>Brutal sonuç</h3>
+        <p><b>${escapeHtml(r.verdict.label)} — ${r.score}/100.</b> ${escapeHtml(main.final)}</p>
+        <p>Bu raporun olayı şu: yuvarlak konuşmuyor. Harita destekliyorsa söyler, desteklemiyorsa da süslemiyor. Devam sorusu sormak için aşağıdaki kutuyu kullan; aynı harita üzerinden ilerler.</p>
+        <div class="aiPromptBox"><b>AI-router için hazır veri mantığı:</b> Tool içeride haritayı, sinyalleri ve yüzdeleri JSON’a çeviriyor. Ücretsiz model bağlanırsa modelin görevi astroloji hesaplamak değil, bu teknik veriyi uzun ve sert dille yazmak olacak. Örnek prompt başlangıcı: ${escapeHtml(aiPrompt)}</div>
+      </div>`;
   }
+
+  function deriveMetrics(a){
+    if(a.ctx.category === 'relationship') return deriveRelationshipMetrics(a);
+    if(a.ctx.category === 'investment') return deriveInvestmentMetrics(a);
+    return deriveGeneralMetrics(a);
+  }
+  function deriveRelationshipMetrics(a){
+    const {positions, sigs, aspects} = a;
+    const q=sigs.querentRuler, t=sigs.targetRuler;
+    const main=getAspect(aspects,q,t), moonT=getAspect(aspects,'Moon',t), moonQ=getAspect(aspects,'Moon',q);
+    const tInQ = isInDignityOf(t, q, positions);
+    const qInT = isInDignityOf(q, t, positions);
+    let partnerLove = 42;
+    if(tInQ.major) partnerLove += 28; else if(tInQ.minor) partnerLove += 14;
+    if(main && main.applying && main.type==='good') partnerLove += 10;
+    if(main && main.applying && main.type==='bad') partnerLove += 5;
+    if(positions[t].house===8 || positions[t].house===12) partnerLove -= 8;
+    if(positions[t].strength < -10) partnerLove -= 6;
+    if(positions.Saturn.house===7) partnerLove -= 8;
+    let querentLove = 42;
+    if(qInT.major) querentLove += 26; else if(qInT.minor) querentLove += 13;
+    if(moonT && moonT.applying && moonT.type==='good') querentLove += 15;
+    if(moonT && moonT.applying && moonT.type==='bad') querentLove += 6;
+    if(moonQ && moonQ.applying && moonQ.type==='good') querentLove += 5;
+    if(positions[q].strength < -10) querentLove -= 5;
+    let healthyFuture = a.rule.score;
+    if(!main) healthyFuture -= 15;
+    if(main && main.applying && main.type==='bad') healthyFuture -= 12;
+    if(positions.Saturn.house===7) healthyFuture -= 20;
+    if(positions[t].strength < -10) healthyFuture -= 8;
+    if(a.moonInfo.voidOfCourse) healthyFuture -= 18;
+    let conflictRisk = 35;
+    if(positions.Saturn.house===7) conflictRisk += 25;
+    if(positions[t].house===8) conflictRisk += 15;
+    if(main && main.applying && main.type==='bad') conflictRisk += 18;
+    if(moonT && moonT.applying && moonT.type==='bad') conflictRisk += 15;
+    if(positions.Mars.strength < -10) conflictRisk += 8;
+    let continuation = 45;
+    if(tInQ.major || qInT.major) continuation += 18;
+    if(main && main.applying) continuation += 12;
+    if(moonT && moonT.applying) continuation += 10;
+    if(a.moonInfo.voidOfCourse) continuation -= 15;
+    return {public:{'Aslı tarafı duygu':clamp(querentLove,0,100),'Gürkan tarafı bağ':clamp(partnerLove,0,100),'Sağlıklı gelecek':clamp(healthyFuture,0,100),'Tartışma riski':clamp(conflictRisk,0,100),'Kısa vade devam':clamp(continuation,0,100)}, raw:{querentLove,partnerLove,healthyFuture,conflictRisk,continuation}};
+  }
+  function deriveInvestmentMetrics(a){
+    const s=a.rule.score;
+    let entry=s, risk=45, wait=50, upside=s;
+    const riskR=RULERS[(a.ascSign+8-1)%12], moneyR=RULERS[(a.ascSign+2-1)%12], specR=RULERS[(a.ascSign+5-1)%12];
+    const moneySpec=getAspect(a.aspects,moneyR,specR), moonRisk=getAspect(a.aspects,'Moon',riskR);
+    if(moneySpec && moneySpec.applying && moneySpec.type==='good') entry+=12;
+    if(moneySpec && moneySpec.applying && moneySpec.type==='bad'){ entry-=10; risk+=12; }
+    if(moonRisk && moonRisk.applying && moonRisk.type==='bad') risk+=22;
+    if(a.positions[riskR].strength > 10) risk+=14;
+    if(a.moonInfo.voidOfCourse){ wait+=20; entry-=15; }
+    wait += Math.max(0, 55-s)/2;
+    return {public:{'Giriş desteği':clamp(entry,0,100),'Yukarı potansiyel':clamp(upside,0,100),'Risk baskısı':clamp(risk,0,100),'Bekleme sinyali':clamp(wait,0,100)}, raw:{entry,risk,wait,upside}};
+  }
+  function deriveGeneralMetrics(a){
+    const s=a.rule.score;
+    const obstacle = clamp(100-s + (a.radical.length*8) + (a.moonInfo.voidOfCourse?18:0),0,100);
+    return {public:{'Olumlu sonuç':s,'Engel baskısı':obstacle,'Bekleme ihtiyacı':clamp(50-s/3 + (a.moonInfo.voidOfCourse?20:0),0,100),'Netlik':clamp(Math.abs(s-50)*2,0,100)}, raw:{}};
+  }
+  function isInDignityOf(p, owner, positions){
+    const sign=positions[p].sign;
+    return {major:RULERS[sign]===owner, minor:EXALT[owner]===sign};
+  }
+  function buildSignalLines(a){
+    const out=[]; const {positions,pos,aspects,sigs}=a; const q=sigs.querentRuler, t=sigs.targetRuler;
+    out.push({title:'Soru sahibi', text:`1. ev yöneticisi ${PNAME[q]} ve Ay. ${PNAME[q]} ${fmtDeg(a.positions[q].lon)} konumunda, ${a.positions[q].house}. evde; durum: ${a.positions[q].dignityText}.`});
+    out.push({title:'Sorulan konu / karşı taraf', text:`${a.categoryInfo.targetHouse}. ev yöneticisi ${PNAME[t]}. ${PNAME[t]} ${fmtDeg(a.positions[t].lon)} konumunda, ${a.positions[t].house}. evde; durum: ${a.positions[t].dignityText}.`});
+    out.push({title:'Ana açı', text:`${PNAME[q]} ile ${PNAME[t]} arasında ${aspectLabel(a.rule.mainAspect)}. Horary’de ana bağlantı yoksa konu kendiliğinden akmaz; yaklaşan iyi açı varsa kapı açılır; sert açı varsa temas kavga/bedel üzerinden gelir.`});
+    out.push({title:'Ay’ın akışı', text:moonNextText(a)});
+    out.push({title:'Reception', text:a.rule.reception.text + '. Reception, taraflardan birinin diğerini sembolik olarak “kabul edip etmediğini” anlatır; ilişki ve anlaşma sorularında çok kritiktir.'});
+    if(a.positions.Saturn.house===7) out.push({title:'Satürn 7. ev', text:'Bu ciddi uyarıdır. 7. ev karşı tarafı ve ilişkinin karşı kanadını anlatır. Satürn burada soğukluk, ağırlık, mesafe, gurur, blokaj ve yıpratıcı tekrar verir.'});
+    if(a.moonInfo.voidOfCourse) out.push({title:'Ay boşlukta', text:'Ay burçtan çıkmadan yeni temel açı kurmuyor. Bu, olayın beklenen yönde kolay ilerlememesi veya mevcut durumun sürmesi demektir.'});
+    return out;
+  }
+  function moonNextText(a){
+    return a.moonInfo.voidOfCourse ? 'Ay boşlukta: burçtan çıkmadan klasik ana gezegenlerle yeni temel açı kurmuyor.' : `Ay'ın burçtan çıkmadan ilk teması ${PNAME[a.moonInfo.next.planet]} ile ${a.moonInfo.next.aspect.name}; yaklaşık ${a.moonInfo.next.distance.toFixed(1)}° sonra. Bu, olayın bir sonraki kapısını gösterir.`;
+  }
+  function brutalMainVerdict(a, metrics){
+    if(a.ctx.category==='relationship'){
+      const m=metrics.public, healthy=m['Sağlıklı gelecek'], cont=m['Kısa vade devam'], conflict=m['Tartışma riski'];
+      let headline = healthy>=60 ? 'Bağ var ve toparlama ihtimali gerçek.' : healthy>=40 ? 'Bağ var ama ilişki rahat akmıyor.' : 'Bağ olabilir ama ilişki sağlıklı zeminde değil.';
+      let body = `Bu harita “tatlı romantik akış” haritası değil. Kısa vadede devam ihtimali ${Math.round(cont)}%, ama tartışma/gerilim riski ${Math.round(conflict)}%. Sağlıklı gelecek puanı ${Math.round(healthy)}%. Yani mesele sadece “seviyor mu?” değil; sevse bile bu ilişki huzur ve istikrar üretiyor mu, asıl soru bu.`;
+      let final = healthy>=60 ? 'Toparlanabilir, ama davranış değişikliği şart. Lafla değil, tutarlı hareketle düzelir.' : healthy>=40 ? 'Bu ilişki yürür ama kendi kendine güzelleşmez. Aynı tartışma dili sürerse yıpratır.' : 'Devam etmesi mümkün; sağlıklı şekilde devam etmesi zayıf. Sevgi varsa bile ilişki biçimi sorunlu.';
+      return {headline,body,final};
+    }
+    if(a.ctx.category==='investment'){
+      const m=metrics.public; const entry=m['Giriş desteği'], risk=m['Risk baskısı'], wait=m['Bekleme sinyali'];
+      return {headline: entry>=65?'Giriş tarafında destek var ama körleme değil.':entry>=45?'Net al sinyali değil; kontrollü yaklaş.':'Horary bu girişe güçlü destek vermiyor.', body:`Giriş desteği ${Math.round(entry)}%, risk baskısı ${Math.round(risk)}%, bekleme sinyali ${Math.round(wait)}%. Bu sonuç “hemen tüm parayla gir” anlamına gelmez. Horary tarafı olumlu olsa bile pozisyon boyutu ve stop ayrı konudur.`, final: entry>=65 && risk<55?'Küçük/kontrollü giriş makul görünebilir; yine de teknik teyit gerekir.':risk>=65?'Risk tarafı çok baskın. Acele ve büyük pozisyon mantıklı değil.':'Beklemek veya küçük kademe daha doğru.'};
+    }
+    return {headline:a.rule.verdict.label, body:`Genel skor ${a.rule.score}/100. Harita olumlu ve olumsuz göstergeleri birlikte veriyor; teknik işaretlerin toplamı bu hükme götürüyor.`, final:shortConclusion(a)};
+  }
+  function categoryDeepDive(a, metrics){
+    if(a.ctx.category==='relationship') return relationshipDive(a, metrics);
+    if(a.ctx.category==='investment') return investmentDive(a, metrics);
+    return generalDive(a, metrics);
+  }
+  function relationshipDive(a, metrics){
+    const m=metrics.public, q=a.sigs.querentRuler, t=a.sigs.targetRuler;
+    const qInT=isInDignityOf(q,t,a.positions), tInQ=isInDignityOf(t,q,a.positions);
+    const qLove = Math.round(m['Aslı tarafı duygu']), pLove=Math.round(m['Gürkan tarafı bağ']);
+    const qText = qInT.major ? `Soru sahibinin göstergesi ${PNAME[q]}, karşı tarafın yönettiği burçta. Bu, soru sahibinde doğrudan çekim/bağ olduğunu gösterir.` : qInT.minor ? `Soru sahibinin göstergesi karşı tarafın yüceldiği alanda. Bu, hayranlık/idealize etme karışımı verebilir.` : `Soru sahibinin göstergesi karşı tarafın güçlü alanında değil. Bu, duygunun saf aşk olmaktan çok sorgu, gurur, kırgınlık veya güven ihtiyacıyla karıştığını gösterir.`;
+    const pText = tInQ.major ? `Karşı tarafın göstergesi ${PNAME[t]}, soru sahibinin yönettiği burçta. Bu güçlü bir bağ/çekim göstergesidir.` : tInQ.minor ? `Karşı taraf göstergesi soru sahibinin yüceldiği alanda. Bu, ilgi ve değer verme göstergesidir ama tek başına istikrar garantisi değildir.` : `Karşı taraf göstergesi soru sahibinin ana alanında değil. Bu, bağın zayıf veya davranışın tutarsız olabileceğini gösterir.`;
+    const badPartner = a.positions[t].strength < -10 ? `${PNAME[t]} zayıf durumda (${a.positions[t].dignityText}). Bu yüzden his olsa bile bunu olgun, güvenli ve istikrarlı göstermekte zorlanır.` : `${PNAME[t]} çok zayıf değil; bu karşı tarafın tamamen dağılmış olmadığını gösterir.`;
+    return `
+      <div class="section"><h3>İlişki derin okuma</h3>
+        <p><b>Soru sahibi tarafı:</b> ${escapeHtml(qText)} Benim puanım: <b>${qLove}%</b>. Bu oran “hiç his yok” demiyor; ama duyguya gurur, kırgınlık ve değer görme ihtiyacı karışmış olabilir.</p>
+        <p><b>Karşı taraf tarafı:</b> ${escapeHtml(pText)} Benim puanım: <b>${pLove}%</b>. ${escapeHtml(badPartner)}</p>
+        <p><b>İlişkinin kalitesi:</b> Sağlıklı gelecek puanı <b>${Math.round(m['Sağlıklı gelecek'])}%</b>. Tartışma riski <b>${Math.round(m['Tartışma riski'])}%</b>. Bu kombinasyon basit: bağ var diye ilişki otomatik iyi olmuyor. Bağ ayrı, ilişki becerisi ayrı.</p>
+        <p><b>Brutal okuma:</b> Bu ilişki “seviyoruz, o zaman olur” kafasıyla yürümez. Tartışma dili, gurur, savunma ve güven meselesi çözülmezse bağ devam etse bile ilişki yorar.</p>
+      </div>`;
+  }
+  function investmentDive(a, metrics){
+    const m=metrics.public;
+    return `<div class="section"><h3>Yatırım derin okuma</h3><p><b>Giriş desteği:</b> ${Math.round(m['Giriş desteği'])}%. <b>Risk baskısı:</b> ${Math.round(m['Risk baskısı'])}%. <b>Bekleme sinyali:</b> ${Math.round(m['Bekleme sinyali'])}%.</p><p>Bu haritada para tarafı, spekülatif kazanç tarafı ve 8. ev risk tarafı birlikte okunur. Risk baskısı giriş desteğinden yüksekse horary “fırsat var” dese bile pozisyon boyutunu küçültmek gerekir.</p><p><b>Brutal okuma:</b> Horary olumlu diye kontrolsüz alım yapılmaz. Olumluysa küçük/kademeli, olumsuzsa bekle ve para koru.</p></div>`;
+  }
+  function generalDive(a, metrics){
+    const m=metrics.public;
+    return `<div class="section"><h3>Kategori özel okuma</h3><p>Olumlu sonuç ihtimali <b>${Math.round(m['Olumlu sonuç'])}%</b>, engel baskısı <b>${Math.round(m['Engel baskısı'])}%</b>, bekleme ihtiyacı <b>${Math.round(m['Bekleme ihtiyacı'])}%</b>.</p><p>Bu kategoride ana hüküm, 1. ev yöneticisi ile konu evinin yöneticisi arasındaki bağdan ve Ay’ın sonraki hareketinden çıkarılır. Ana bağlantı zayıfsa sonuç kendiliğinden akmaz; Ay destekliyorsa süreç kapı açar.</p></div>`;
+  }
+  function buildPlainTextReport(a){
+    const metrics=deriveMetrics(a); const lines=[];
+    lines.push('Horary AI Router Tool v6');
+    lines.push('Soru: '+a.ctx.question); lines.push('Kategori: '+a.categoryInfo.name); lines.push('Zaman: '+a.ctx.date.toLocaleString('tr-TR')); lines.push('Konum: '+a.ctx.lat.toFixed(5)+', '+a.ctx.lon.toFixed(5)); lines.push('ASC: '+fmtDeg(a.asc)); lines.push('MC: '+fmtDeg(a.mc)); lines.push('Cevap: '+a.rule.verdict.label+' — '+a.rule.score+'/100');
+    lines.push('\nYüzdeler:'); Object.entries(metrics.public).forEach(([k,v])=>lines.push('- '+k+': '+Math.round(v)+'%'));
+    lines.push('\nSinyaller:'); buildSignalLines(a).forEach(x=>lines.push('- '+x.title+': '+x.text));
+    lines.push('\nBrutal sonuç: '+brutalMainVerdict(a, metrics).final);
+    return lines.join('\n');
+  }
+  function buildLLMPrompt(a, metrics){
+    return `Sen agresif, net, uzun yazan Türkçe horary yorumcususun. Yuvarlak konuşma. Yüzde ver. Haritada olmayan bilgi uydurma. Soru: ${a.ctx.question}. Kategori: ${a.categoryInfo.name}. ASC: ${fmtDeg(a.asc)}. Soru sahibi: ${PNAME[a.sigs.querentRuler]} + Ay. Konu/karşı taraf: ${PNAME[a.sigs.targetRuler]}. Sinyaller: ${buildSignalLines(a).map(x=>x.title+': '+x.text).join(' | ')}. Yüzdeler: ${JSON.stringify(metrics.public)}. Hüküm: ${brutalMainVerdict(a,metrics).final}`;
+  }
+
+
+  function buildAIWriterPrompt(a, followupQuestion){
+    const metrics = deriveMetrics(a);
+    const main = brutalMainVerdict(a, metrics);
+    const signals = buildSignalLines(a).map((x,i)=>`${i+1}) ${x.title}: ${x.text}`).join('\n');
+    const pos = a.positions;
+    const planetRows = PLANETS.map(p=>`${PNAME[p]}: ${fmtDeg(pos[p].lon)}, ${pos[p].house}. ev, güç ${pos[p].strength}, ${pos[p].dignityText}`).join('\n');
+    const followBlock = followupQuestion ? `\nDEVAM SORUSU: ${followupQuestion}\nBu bir devam sorusu. Ana horary saati değişmedi. Aynı harita üzerinden, devam sorusuna net ve spesifik cevap ver.` : '';
+    return `Sen Türkçe yazan, agresif, brutal honest, çok net bir horary yorumcususun.
+
+ZORUNLU ÜSLUP:
+- Uzun yaz. Kısa cevap verme.
+- Yuvarlak konuşma. “Belki, enerji, hissediyorum” gibi boş cümleleri azalt.
+- Her iddiayı aşağıdaki teknik horary sinyallerine bağla.
+- “Bunu şuradan anlıyoruz:” diye sebep göster.
+- Yüzde ver. Arada kaldığın yerde bile net ol.
+- Haritada olmayan olay uydurma. Kişilere hakaret etme; ama davranış örüntüsünü sert yorumla.
+- Türkçe yaz. Okuyan kişi uzun ve detaylı açıklama seviyor.
+
+SORU:
+${a.ctx.question}
+${followBlock}
+
+KATEGORİ: ${a.categoryInfo.name}
+YER/SAAT: ${a.ctx.date.toLocaleString('tr-TR')} · ${a.ctx.lat.toFixed(5)}, ${a.ctx.lon.toFixed(5)}
+ASC: ${fmtDeg(a.asc)}
+MC: ${fmtDeg(a.mc)}
+Ev sistemi: Whole Sign
+Soru sahibi göstergesi: ${PNAME[a.sigs.querentRuler]} + Ay
+Konu/karşı taraf göstergesi: ${PNAME[a.sigs.targetRuler]}
+
+GEZEGENLER:
+${planetRows}
+
+HORARY SİNYALLERİ:
+${signals}
+
+YÜZDELER:
+${JSON.stringify(metrics.public, null, 2)}
+
+ANA HÜKÜM:
+${main.headline}
+${main.body}
+Final: ${main.final}
+
+CEVAP FORMATI:
+1) Net hüküm
+2) Haritanın ana resmi
+3) Soru sahibi tarafı
+4) Karşı taraf / konu tarafı
+5) En kritik pozitifler
+6) En kritik negatifler
+7) Kısa vade
+8) Uzun vade
+9) Yüzde tablosu
+10) Brutal sonuç
+
+Cevabı Markdown benzeri başlıklarla yazabilirsin ama gereksiz süs yapma.`;
+  }
+
+  function setAIStatus(msg, cls){
+    const el = $('aiStatus');
+    if(!el) return;
+    el.textContent = msg;
+    el.style.color = cls==='error' ? 'var(--red)' : cls==='ok' ? 'var(--green)' : 'var(--ink3)';
+  }
+
+  function getRouterEndpoint(){
+    const el = $('aiEndpoint');
+    const val = el ? el.value.trim() : '';
+    if(val) localStorage.setItem('horary_ai_endpoint', val);
+    return val || localStorage.getItem('horary_ai_endpoint') || '';
+  }
+
+  function getSelectedProvider(){
+    const el = $('aiProvider');
+    return el ? (el.value || 'auto') : 'auto';
+  }
+
+  function normalizeRouterText(payload){
+    if(!payload) return '';
+    if(typeof payload === 'string') return payload;
+    if(payload.text) return String(payload.text);
+    if(payload.answer) return String(payload.answer);
+    if(payload.output) return String(payload.output);
+    return '';
+  }
+
+  async function runRouterPrompt(prompt, followupQuestion){
+    const endpoint = getRouterEndpoint();
+    if(!endpoint) throw new Error('Worker URL boş. Cloudflare Worker deploy edip /analyze URL’ini buraya yaz.');
+    const provider = getSelectedProvider();
+    const body = {
+      prompt,
+      provider,
+      mode: followupQuestion ? 'followup' : 'main',
+      category: lastAnalysis ? lastAnalysis.categoryInfo.name : null,
+      question: lastAnalysis ? lastAnalysis.ctx.question : null,
+      followup: followupQuestion || null,
+      client: 'horary-router-tool-v6'
+    };
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    const payload = await res.json().catch(()=>({ok:false,error:'Worker JSON dönmedi.'}));
+    if(!res.ok || payload.ok === false){
+      throw new Error(payload.error || ('Worker hata döndürdü: HTTP '+res.status));
+    }
+    const text = normalizeRouterText(payload).trim();
+    if(!text || text.length < 180) throw new Error('AI cevabı çok kısa veya boş geldi. Sağlayıcı limitte olabilir; Auto Router ya da başka provider dene.');
+    return { text, provider: payload.provider || provider, model: payload.model || 'auto' };
+  }
+
+  async function generateAIAnswer(){
+    if(!lastAnalysis){ showStatus('Önce ana horary analizini çalıştır.', 'error'); return; }
+    const btn = $('aiBtn');
+    btn.disabled = true;
+    const old = btn.textContent;
+    btn.textContent = 'AI yazıyor...';
+    $('aiOutput').classList.remove('show');
+    $('aiOutput').textContent = '';
+    setAIStatus('Worker router’a istek gönderiliyor. Auto seçiliyse sırayla ücretsiz modeller denenecek...', 'wait');
+    try{
+      const prompt = buildAIWriterPrompt(lastAnalysis, null);
+      const {text, provider, model} = await runRouterPrompt(prompt, null);
+      $('aiOutput').textContent = text;
+      $('aiOutput').classList.add('show');
+      setAIStatus('AI yorumu üretildi. Provider: '+provider+' · Model: '+model, 'ok');
+    }catch(e){
+      setAIStatus('AI çalışmadı: '+(e && e.message ? e.message : e)+'. Offline rapor hâlâ geçerli.', 'error');
+    }finally{
+      btn.disabled = false;
+      btn.textContent = old;
+    }
+  }
+
+  async function askAIFollowup(){
+    if(!lastAnalysis){ showStatus('Önce ana horary analizini çalıştır.', 'error'); return; }
+    const q = $('followupInput').value.trim();
+    if(!q) return;
+    const btn = $('aiFollowupBtn');
+    btn.disabled = true;
+    const old = btn.textContent;
+    btn.textContent = 'AI yazıyor...';
+    try{
+      setAIStatus('AI devam sorusu için router’a istek gönderiliyor...', 'wait');
+      const prompt = buildAIWriterPrompt(lastAnalysis, q);
+      const {text, provider, model} = await runRouterPrompt(prompt, q);
+      const ans = `<h4>AI devam cevabı</h4><div style="white-space:pre-wrap">${escapeHtml(text)}</div><p class="muted">Provider: ${escapeHtml(provider)} · Model: ${escapeHtml(model)}</p>`;
+      followupHistory.push({q, ans});
+      renderFollowups();
+      $('followupInput').value='';
+      setAIStatus('AI devam cevabı eklendi. Provider: '+provider+' · Model: '+model, 'ok');
+    }catch(e){
+      setAIStatus('AI devam sorusu çalışmadı: '+(e && e.message ? e.message : e)+'. Offline devam butonu çalışır.', 'error');
+    }finally{
+      btn.disabled = false;
+      btn.textContent = old;
+    }
+  }
+
+  function askFollowup(){
+    if(!lastAnalysis){ showStatus('Önce ana horary analizini çalıştır.', 'error'); return; }
+    const q = $('followupInput').value.trim();
+    if(!q){ return; }
+    const ans = buildFollowupAnswer(q, lastAnalysis);
+    followupHistory.push({q, ans});
+    renderFollowups();
+    $('followupInput').value='';
+  }
+  function clearFollowups(silent){
+    followupHistory=[];
+    if($('followupThread')) $('followupThread').innerHTML='';
+    if($('followupInput')) $('followupInput').value='';
+    if(!silent && lastAnalysis) showStatus('Devam soruları temizlendi. Ana harita duruyor.', 'ok');
+  }
+  function renderFollowups(){
+    $('followupThread').innerHTML = followupHistory.map(item=>`<div class="qa"><div class="qaQ">${escapeHtml(item.q)}</div><div class="qaA">${item.ans}</div></div>`).join('');
+  }
+  function buildFollowupAnswer(question, a){
+    const qlow = question.toLocaleLowerCase('tr-TR');
+    const metrics=deriveMetrics(a); const main=brutalMainVerdict(a,metrics);
+    if(a.ctx.category==='relationship') return buildRelationshipFollowup(question, qlow, a, metrics, main);
+    if(a.ctx.category==='investment') return buildInvestmentFollowup(question, qlow, a, metrics, main);
+    return `<h4>Net cevap</h4><p><b>${escapeHtml(a.rule.verdict.label)}.</b> ${escapeHtml(main.final)}</p><p>Bu devam sorusunu aynı haritadan okursak ana hüküm değişmiyor: ${escapeHtml(shortConclusion(a))}</p><p>Teknik sebep: ${escapeHtml(buildSignalLines(a).slice(0,3).map(x=>x.title+': '+x.text).join(' '))}</p>`;
+  }
+  function buildRelationshipFollowup(question, qlow, a, metrics, main){
+    const m=metrics.public; const partner=Math.round(m['Gürkan tarafı bağ']); const querent=Math.round(m['Aslı tarafı duygu']); const healthy=Math.round(m['Sağlıklı gelecek']); const conflict=Math.round(m['Tartışma riski']); const cont=Math.round(m['Kısa vade devam']);
+    const sigs=buildSignalLines(a).slice(0,5).map(x=>`<li><b>${escapeHtml(x.title)}:</b> ${escapeHtml(x.text)}</li>`).join('');
+    if(/sev|aşık|his|duygu/.test(qlow)){
+      return `<h4>Sevgi / his cevabı</h4><p><b>Brutal cevap:</b> Karşı tarafta bağ/çekim puanı ${partner}%, soru sahibi tarafında duygu puanı ${querent}%.</p><p>Bu “hiçbir şey yok” haritası değil. Ama bu aynı zamanda “temiz, huzurlu, olgun aşk” haritası da değil. His var; ilişkiyi taşıma becerisi daha zayıf.</p><ul>${sigs}</ul><p><b>Net:</b> Sevgi ihtimali var, ama sağlıklı sevme/istikrar verme ihtimali daha düşük. Sevgi var diye ilişki iyi olacak sonucuna atlama.</p>`;
+    }
+    if(/gelecek|devam|sür|olacak|ne olur|iler/.test(qlow)){
+      return `<h4>Gelecek / devam cevabı</h4><p><b>Kısa vadede devam ihtimali:</b> ${cont}%. <b>Sağlıklı uzun vade:</b> ${healthy}%. <b>Tartışma riski:</b> ${conflict}%.</p><p>Bu tablo çok net: kopuş hemen kesin değil; ama ilişki kendi kendine de güzelleşmiyor. Devam edebilir, fakat aynı tartışma dili sürerse yıpratıcı devam eder.</p><ul>${sigs}</ul><p><b>Net:</b> Gelecek var ama kaliteli gelecek düşük. Davranış değişikliği olmadan “düzelir” demem.</p>`;
+    }
+    if(/bitir|ayrıl|bırak|kop|uzak/.test(qlow)){
+      return `<h4>Bitirmek / uzaklaşmak cevabı</h4><p><b>Brutal cevap:</b> Harita “hemen kes at” diye bağırmıyor; çünkü kısa vadede devam bağı ${cont}%. Ama sağlıklı gelecek ${healthy}% kaldığı için “hiçbir şey olmamış gibi devam et” de demiyor.</p><p>Benim net okuma: önce net sınır koy, sonra davranışa bak. Aynı kavga kalıbı tekrar ederse bitirme tarafı güçlenir.</p><ul>${sigs}</ul><p><b>Karar çizgisi:</b> söz değil davranış. Özür/romantik mesaj değil, tartışma anındaki değişim belirleyici.</p>`;
+    }
+    if(/geri dön|yazar|arar|mesaj|iletişim|konuş/.test(qlow)){
+      return `<h4>İletişim / geri dönüş cevabı</h4><p><b>Brutal cevap:</b> İletişim ihtimali tamamen kapalı değil. Kısa vadede devam/temas puanı ${cont}%. Ama temasın huzurlu olma garantisi yok; tartışma riski ${conflict}%.</p><p>Yani “yazar mı/konuşur mu?” tarafında evet ihtimali var; ama “konuşma çözüm olur mu?” tarafında aynı kadar güçlü değil.</p><ul>${sigs}</ul><p><b>Net:</b> Konuşma gelir veya kapı açılırsa bile, mesele çözülmeden tekrar aynı yere dönme riski yüksek.</p>`;
+    }
+    return `<h4>Devam sorusu cevabı</h4><p><b>${escapeHtml(main.headline)}</b> ${escapeHtml(main.final)}</p><p>Yüzdeler: Aslı tarafı ${querent}%, karşı taraf bağı ${partner}%, sağlıklı gelecek ${healthy}%, tartışma riski ${conflict}%, kısa vade devam ${cont}%.</p><ul>${sigs}</ul><p><b>Net:</b> Bu harita bağ gösteriyor ama huzur garantisi vermiyor. Devam sorusunun cevabında ana eksen değişmiyor: sevgi ayrı, ilişki kalitesi ayrı.</p>`;
+  }
+  function buildInvestmentFollowup(question, qlow, a, metrics, main){
+    const m=metrics.public; const entry=Math.round(m['Giriş desteği']); const risk=Math.round(m['Risk baskısı']); const wait=Math.round(m['Bekleme sinyali']);
+    const sigs=buildSignalLines(a).slice(0,5).map(x=>`<li><b>${escapeHtml(x.title)}:</b> ${escapeHtml(x.text)}</li>`).join('');
+    if(/al|gir|pozisyon|kademe/.test(qlow)) return `<h4>Alım / giriş cevabı</h4><p><b>Giriş desteği:</b> ${entry}%. <b>Risk:</b> ${risk}%. <b>Bekleme:</b> ${wait}%.</p><p>Brutal cevap: ${escapeHtml(main.final)}</p><ul>${sigs}</ul><p><b>Net:</b> Risk girişten yüksekse küçük kademe bile agresiftir. Horary olumluysa bile tüm para değil; kontrollü pozisyon.</p>`;
+    if(/sat|çık|stop|zarar/.test(qlow)) return `<h4>Satış / çıkış cevabı</h4><p><b>Risk baskısı ${risk}%</b>. Bekleme sinyali ${wait}%.</p><p>Brutal cevap: Risk yüksekse inat etme. Horary zayıfsa para koruma tarafı ağır basar.</p><ul>${sigs}</ul><p><b>Net:</b> Stop/çıkış sorusunda 8. ev ve Ay risk teması baskınsa “belki döner” diye büyütmek doğru değil.</p>`;
+    return `<h4>Yatırım devam cevabı</h4><p>Giriş desteği ${entry}%, risk baskısı ${risk}%, bekleme sinyali ${wait}%.</p><p>${escapeHtml(main.final)}</p><ul>${sigs}</ul>`;
+  }
+
   function copyReport(){
     if(!lastReportText) return;
     navigator.clipboard.writeText(lastReportText).then(()=>{

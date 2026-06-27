@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Horary AI Router Tool v7</title>
+  <title>Horary AI Router Tool v9</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
   :root{
@@ -183,11 +183,11 @@
 
   <section id="aiCard" class="aiCard hidden">
     <div class="cardTitle">
-      <b>AI Brutal yorum</b>
-      <span class="pill">Router · free model fallback</span>
+      <b>AI Horary yorumu</b>
+      <span class="pill">Horary agent · net/brutal mod</span>
     </div>
-    <p class="aiIntro">Offline rapor temel iskelettir. Bu bölüm aynı harita verisini senin Cloudflare Worker model-router’ına gönderir. Model horary hesaplamaz; bizim tool’un çıkardığı teknik sinyal ve yüzdeleri senin istediğin gibi uzun, agresif, net bir rapora çevirir.</p>
-    <div class="aiControls">
+    <p class="aiIntro">Ana yorum burada üretilecek. Tool haritayı ve teknik sinyalleri hesaplar; AI ise soruyu anlayıp bu verileri uzun, net ve sert bir yoruma çevirir. Kategori cevap kalıbı değildir; sadece haritada hangi göstergelerin ağır basacağını belirler.</p>
+    <div class="aiControls" style="display:none">
       <select id="aiProvider" class="modelSelect" aria-label="AI sağlayıcı">
         <option value="auto" selected>Auto Router — çalışan ilk free model</option>
         <option value="gemini">Gemini free key</option>
@@ -195,12 +195,12 @@
         <option value="openrouter">OpenRouter free models</option>
         <option value="workersai">Cloudflare Workers AI</option>
       </select>
-      <button id="aiBtn" class="aiBtn">AI Brutal Yorumu Üret</button>
+      <button id="aiBtn" class="aiBtn">AI Yorumu Üret</button>
     </div>
-    <input id="aiEndpoint" class="endpointInput" placeholder="Worker URL: https://horary-slave.akiftolgagonen.workers.dev/analyze" />
-    <div id="aiStatus" class="aiStatus">AI router hazır. Endpoint otomatik tanımlı; gerekirse gelişmiş alandan değiştirilebilir.</div>
+    <input id="aiEndpoint" class="endpointInput" style="display:none" placeholder="Worker URL: https://horary-slave.akiftolgonen.workers.dev/analyze" />
+    <div id="aiStatus" class="aiStatus">AI router bağlı. Analizden sonra otomatik cevap üretilecek.</div>
     <div id="aiOutput" class="aiOutput"></div>
-    <p class="privacyNote">Not: Offline modda veri dışarı gitmez. AI modunda soru, harita sinyalleri ve yüzdeler senin Worker’ına, oradan seçilen ücretsiz modele gider. API key HTML içinde görünmez; Worker secret olarak saklanır. Ücretsiz sağlayıcıların limitleri olabilir.</p>
+    <p class="privacyNote">Not: AI yorumu için soru ve horary sinyalleri senin Cloudflare Worker’ına gider. API key HTML içinde görünmez; Worker secret olarak saklanır. AI çalışmazsa teknik fallback saklı kalır.</p>
   </section>
 
   <section id="followCard" class="followCard hidden">
@@ -208,11 +208,10 @@
       <b>Devam sorusu</b>
       <span class="pill">Aynı haritadan ilerler</span>
     </div>
-    <p class="followIntro">İlk horary haritası açıldıktan sonra burada devam sorusu sor. Yeni saat/konum alınmaz; aynı soru anının haritası üzerinden daha spesifik cevap verir. Örnek: “O geri döner mi?”, “Ben bitirmeli miyim?”, “1 ay içinde ne olur?”</p>
+    <p class="followIntro">İlk horary haritası açıldıktan sonra burada devam sorusu sor. Yeni saat/konum alınmaz; aynı soru anının haritası üzerinden daha spesifik cevap verir. Örnek: “O geri döner mi?”, “Bu yıl sonuna kadar olur mu?”, “Ben yazmalı mıyım?”, “Şimdi almak mı beklemek mi?”</p>
     <textarea id="followupInput" placeholder="Devam sorunu yaz..."></textarea>
     <div class="followActions">
-      <button id="followupBtn" class="followBtn">Offline Devam Yorumu</button>
-      <button id="aiFollowupBtn" class="aiFollowBtn">AI ile Devam</button>
+      <button id="followupBtn" class="followBtn">Cevapla</button>
       <button id="clearFollowups" class="ghostBtn">Devamı Temizle</button>
     </div>
     <div id="followupThread" class="followThread"></div>
@@ -248,7 +247,7 @@
   </details>
 </div>
 <footer>
-  <div>Offline horary yorum aracı · Brutal yorum motoru · Tek dosya</div>
+  <div>Horary AI agent · Cloudflare router · Mobil uyumlu</div>
   <div class="footerBrand">Hora<em>ry</em></div>
 </footer>
 <div class="copyBox" id="copyBox">Rapor kopyalandı.</div>
@@ -288,6 +287,7 @@
   let lastReportText = '';
   let lastAnalysis = null;
   let followupHistory = [];
+  let lastAIAnswer = '';
 
   function init(){
     $('question').value = localStorage.getItem('horary_q') || '';
@@ -296,10 +296,9 @@
     $('category').addEventListener('change', () => localStorage.setItem('horary_cat', $('category').value));
     $('analyzeBtn').addEventListener('click', analyzeNow);
     $('copyReport').addEventListener('click', copyReport);
-    $('clearBtn').addEventListener('click', () => { $('question').value=''; localStorage.removeItem('horary_q'); clearFollowups(true); $('answerCard').classList.add('hidden'); $('report').classList.add('hidden'); $('mainResult').classList.add('hidden'); $('followCard').classList.add('hidden'); $('aiCard').classList.add('hidden'); $('aiOutput').classList.remove('show'); $('aiOutput').textContent=''; $('aiStatus').textContent='AI router hazır. Endpoint otomatik tanımlı.'; });
-    $('followupBtn').addEventListener('click', askFollowup);
-    $('aiFollowupBtn').addEventListener('click', askAIFollowup);
-    $('aiBtn').addEventListener('click', generateAIAnswer);
+    $('clearBtn').addEventListener('click', () => { $('question').value=''; localStorage.removeItem('horary_q'); lastAIAnswer=''; clearFollowups(true); $('answerCard').classList.add('hidden'); $('report').classList.add('hidden'); $('mainResult').classList.add('hidden'); $('followCard').classList.add('hidden'); $('aiCard').classList.add('hidden'); $('aiOutput').classList.remove('show'); $('aiOutput').textContent=''; $('aiStatus').textContent='AI router hazır. Endpoint otomatik tanımlı.'; });
+    $('followupBtn').addEventListener('click', askAIFollowup);
+    if($('aiBtn')) $('aiBtn').addEventListener('click', () => generateAIAnswer(false));
     $('aiEndpoint').value = localStorage.getItem('horary_ai_endpoint') || DEFAULT_AI_ENDPOINT;
     if(!localStorage.getItem('horary_ai_endpoint')) localStorage.setItem('horary_ai_endpoint', DEFAULT_AI_ENDPOINT);
     setAIStatus('AI router bağlı: horary-slave.akiftolgagonen.workers.dev', 'ok');
@@ -332,8 +331,9 @@
       lastAnalysis = analysis;
       clearFollowups(true);
       renderAll(analysis);
-      showStatus('Analiz tamamlandı. Konum ve saat otomatik kullanıldı. Konum hassasiyeti yaklaşık ±'+Math.round(pos.coords.accuracy||0)+' m.', 'ok');
+      showStatus('Horary haritası açıldı. AI yorum hazırlanıyor...', 'notice');
       $('copyReport').disabled = false;
+      await generateAIAnswer(true);
     }catch(e){
       console.error(e);
       const msg = geoErrorMessage(e);
@@ -716,7 +716,12 @@
   function clamp(x,a,b){ return Math.max(a, Math.min(b,x)); }
 
   function renderAll(a){
-    $('mainResult').classList.remove('hidden'); $('report').classList.remove('hidden'); $('answerCard').classList.remove('hidden'); $('aiCard').classList.remove('hidden'); $('followCard').classList.remove('hidden');
+    $('mainResult').classList.remove('hidden');
+    $('report').classList.add('hidden');
+    $('answerCard').classList.add('hidden');
+    $('aiCard').classList.remove('hidden');
+    $('followCard').classList.remove('hidden');
+    $('aiOutput').textContent=''; $('aiOutput').classList.remove('show'); lastAIAnswer='';
     $('kTime').textContent = a.ctx.date.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
     $('kLoc').textContent = `${a.ctx.lat.toFixed(2)}, ${a.ctx.lon.toFixed(2)}`;
     $('kAsc').textContent = fmtShort(a.asc);
@@ -991,7 +996,7 @@
   }
   function buildPlainTextReport(a){
     const metrics=deriveMetrics(a); const lines=[];
-    lines.push('Horary AI Router Tool v6');
+    lines.push('Horary AI Router Tool v9');
     lines.push('Soru: '+a.ctx.question); lines.push('Kategori: '+a.categoryInfo.name); lines.push('Zaman: '+a.ctx.date.toLocaleString('tr-TR')); lines.push('Konum: '+a.ctx.lat.toFixed(5)+', '+a.ctx.lon.toFixed(5)); lines.push('ASC: '+fmtDeg(a.asc)); lines.push('MC: '+fmtDeg(a.mc)); lines.push('Cevap: '+a.rule.verdict.label+' — '+a.rule.score+'/100');
     lines.push('\nYüzdeler:'); Object.entries(metrics.public).forEach(([k,v])=>lines.push('- '+k+': '+Math.round(v)+'%'));
     lines.push('\nSinyaller:'); buildSignalLines(a).forEach(x=>lines.push('- '+x.title+': '+x.text));
@@ -1009,57 +1014,95 @@
     const signals = buildSignalLines(a).map((x,i)=>`${i+1}) ${x.title}: ${x.text}`).join('\n');
     const pos = a.positions;
     const planetRows = PLANETS.map(p=>`${PNAME[p]}: ${fmtDeg(pos[p].lon)}, ${pos[p].house}. ev, güç ${pos[p].strength}, ${pos[p].dignityText}`).join('\n');
-    const followBlock = followupQuestion ? `\nDEVAM SORUSU: ${followupQuestion}\nBu bir devam sorusu. Ana horary saati değişmedi. Aynı harita üzerinden, devam sorusuna net ve spesifik cevap ver.` : '';
-    return `Sen Türkçe yazan, agresif, brutal honest, çok net bir horary yorumcususun.
+    const questionMode = followupQuestion ? 'DEVAM_SORUSU' : 'ANA_SORU';
+    const followBlock = followupQuestion ? `\nDEVAM SORUSU: ${followupQuestion}\nBu bir devam sorusu. Yeni horary açma. Aynı ana horary haritasını, önceki soruyu ve önceki AI yorumunu bağlam olarak kullan. Devam sorusuna doğrudan, net ve gereksiz tekrar yapmadan cevap ver.` : '';
+    const prevBlock = followupQuestion && lastAIAnswer ? `\nÖNCEKİ AI YORUMUNDAN BAĞLAM:\n${lastAIAnswer.slice(0, 4500)}` : '';
+    const historyBlock = followupHistory.length ? `\nÖNCEKİ DEVAM SORULARI:\n${followupHistory.map((h,i)=>`${i+1}) ${h.q}`).join('\n')}` : '';
+    const hardVerdicts = buildHardVerdicts(a, metrics, main);
+    return `HORARY AI AGENT GÖREVİ
 
-ZORUNLU ÜSLUP:
-- Uzun yaz. Kısa cevap verme.
-- Yuvarlak konuşma. “Belki, enerji, hissediyorum” gibi boş cümleleri azalt.
-- Her iddiayı aşağıdaki teknik horary sinyallerine bağla.
-- “Bunu şuradan anlıyoruz:” diye sebep göster.
-- Yüzde ver. Arada kaldığın yerde bile net ol.
-- Haritada olmayan olay uydurma. Kişilere hakaret etme; ama davranış örüntüsünü sert yorumla.
-- Türkçe yaz. Okuyan kişi uzun ve detaylı açıklama seviyor.
+MOD: ${questionMode}
 
-SORU:
+KULLANICI SORUSU / BAĞLAM:
 ${a.ctx.question}
 ${followBlock}
+${prevBlock}
+${historyBlock}
 
-KATEGORİ: ${a.categoryInfo.name}
-YER/SAAT: ${a.ctx.date.toLocaleString('tr-TR')} · ${a.ctx.lat.toFixed(5)}, ${a.ctx.lon.toFixed(5)}
+KATEGORİ / TEKNİK LENS:
+${a.categoryInfo.name}
+Kategori açıklaması: ${a.categoryInfo.explain}
+Önemli not: Kategori cevap kalıbı değildir. Kategori sadece horary'de hangi evlerin ve göstergelerin daha önemli olduğunu söyler. Cevap formatını kullanıcının sorduğu soru belirleyecek.
+
+YER/SAAT:
+${a.ctx.date.toLocaleString('tr-TR')} · ${a.ctx.lat.toFixed(5)}, ${a.ctx.lon.toFixed(5)}
 ASC: ${fmtDeg(a.asc)}
 MC: ${fmtDeg(a.mc)}
 Ev sistemi: Whole Sign
 Soru sahibi göstergesi: ${PNAME[a.sigs.querentRuler]} + Ay
 Konu/karşı taraf göstergesi: ${PNAME[a.sigs.targetRuler]}
+Konu evi: ${a.categoryInfo.targetHouse}. ev (${a.categoryInfo.targetLabel})
+Yardımcı evler: ${a.categoryInfo.secondary.join(', ')}
 
 GEZEGENLER:
 ${planetRows}
 
-HORARY SİNYALLERİ:
+HORARY SİNYALLERİ / KANIT DOSYASI:
 ${signals}
 
-YÜZDELER:
+YÜZDELER / METRİKLER:
 ${JSON.stringify(metrics.public, null, 2)}
 
-ANA HÜKÜM:
-${main.headline}
-${main.body}
+MOTORUN ÖN HÜKMÜ:
+Başlık: ${main.headline}
+Açıklama: ${main.body}
 Final: ${main.final}
 
-CEVAP FORMATI:
-1) Net hüküm
-2) Haritanın ana resmi
-3) Soru sahibi tarafı
-4) Karşı taraf / konu tarafı
-5) En kritik pozitifler
-6) En kritik negatifler
-7) Kısa vade
-8) Uzun vade
-9) Yüzde tablosu
-10) Brutal sonuç
+HARD VERDICTS / KAÇMAMAN GEREKEN NET KARARLAR:
+${hardVerdicts}
 
-Cevabı Markdown benzeri başlıklarla yazabilirsin ama gereksiz süs yapma.`;
+CEVAP DAVRANIŞI:
+- Önce kullanıcının sorusunu anla. İçindeki açık/örtük alt soruları çıkar.
+- Cevap başlıklarını bu alt sorulara göre kur. Hazır kategori kalıbı yapıştırma.
+- İlk 5-8 satırda net final hüküm ver.
+- Sonra sorunun içindeki alt sorulara tek tek cevap ver. Kullanıcı hisse sorduysa hisseye; ilişki sorduysa ilişkinin sorduğu yönüne; iş sorduysa işe odaklan.
+- "Bunu şuradan anlıyoruz" diyerek teknik sinyali sade dile çevir.
+- Yüzde ver. Arada kaldığın yerde bile net dağıtım yap.
+- Kötü sinyal varsa açıkça söyle. Hayır demekten korkma.
+- Haritada olmayan şeyi kesin gerçekmiş gibi uydurma. Bağlam varsa kullan ama kanıt gibi abartma.
+- Ana soruysa uzun ve detaylı yaz. Devam sorusuysa daha direkt ama yine açıklamalı yaz.
+- Son bölümde "Brutal sonuç" ver.
+
+İSTENEN TON:
+Sert, net, detaylı, doğrudan. Kullanıcı moral metni istemiyor. "Olur gibi ama bilemem" yazma. İyi/kötü ayrımını keskin kur. Ama saçma kesinlik veya iftira üretme.`;
+  }
+
+  function buildHardVerdicts(a, metrics, main){
+    const m = metrics.public || {};
+    const lines = [];
+    lines.push(`Genel skor: ${a.rule.score}/100 (${a.rule.verdict.label})`);
+    lines.push(`Ana hüküm: ${main.final}`);
+    if(a.ctx.category === 'relationship'){
+      const q = Math.round(m['Aslı tarafı duygu'] ?? 50), p = Math.round(m['Gürkan tarafı bağ'] ?? 50), h = Math.round(m['Sağlıklı gelecek'] ?? 50), c = Math.round(m['Tartışma riski'] ?? 50), cont = Math.round(m['Kısa vade devam'] ?? 50);
+      lines.push(`Soru sahibi tarafı duygu/bağ: ${q}%. 60 üstü güçlü, 40-60 karışık, 40 altı zayıf oku.`);
+      lines.push(`Karşı taraf bağı: ${p}%. Bu sevgi/bağ gösterebilir ama davranış kalitesiyle aynı şey değildir.`);
+      lines.push(`Sağlıklı gelecek: ${h}%. 45 altıysa net şekilde "sağlıklı değil / zor" de.`);
+      lines.push(`Tartışma/gerilim riski: ${c}%. 65 üstü ise problemi küçümseme.`);
+      lines.push(`Kısa vade temas/devam: ${cont}%. Devam ile kaliteli devamı ayır.`);
+    } else if(a.ctx.category === 'investment'){
+      const entry = Math.round(m['Giriş desteği'] ?? a.rule.score), up = Math.round(m['Yukarı potansiyel'] ?? a.rule.score), risk = Math.round(m['Risk baskısı'] ?? 50), wait = Math.round(m['Bekleme sinyali'] ?? 50);
+      lines.push(`Giriş desteği: ${entry}%. 55 altıysa "şimdi net al değil" de.`);
+      lines.push(`Yukarı potansiyel: ${up}%. Potansiyel ile giriş zamanlamasını ayrı tut.`);
+      lines.push(`Risk baskısı: ${risk}%. Risk giriş desteğinden yüksekse "bekle/küçük kademe" de.`);
+      lines.push(`Bekleme sinyali: ${wait}%. 60 üstü ise aceleyi eleştir.`);
+      lines.push(`Finansal kesinlik verme; ama horary açısından net risk/giriş yorumu yap.`);
+    } else {
+      Object.entries(m).forEach(([k,v]) => lines.push(`${k}: ${Math.round(v)}%.`));
+      lines.push(`Kategori özel ama kalıba bağlı kalma. Kullanıcının gerçek sorusuna göre alt soruları çıkar.`);
+    }
+    if(a.moonInfo.voidOfCourse) lines.push('Ay boşlukta: ilerleme zayıf/sonuç gecikmeli veya mevcut durum sürer. Bunu net söyle.');
+    if(a.radical && a.radical.length) lines.push('Radicality uyarıları var: '+a.radical.join(' | '));
+    return lines.join('\n');
   }
 
   function setAIStatus(msg, cls){
@@ -1101,7 +1144,7 @@ Cevabı Markdown benzeri başlıklarla yazabilirsin ama gereksiz süs yapma.`;
       category: lastAnalysis ? lastAnalysis.categoryInfo.name : null,
       question: lastAnalysis ? lastAnalysis.ctx.question : null,
       followup: followupQuestion || null,
-      client: 'horary-router-tool-v6'
+      client: 'horary-router-tool-v9'
     };
     const res = await fetch(endpoint, {
       method: 'POST',
@@ -1117,48 +1160,68 @@ Cevabı Markdown benzeri başlıklarla yazabilirsin ama gereksiz süs yapma.`;
     return { text, provider: payload.provider || provider, model: payload.model || 'auto' };
   }
 
-  async function generateAIAnswer(){
+  async function generateAIAnswer(autoRun){
     if(!lastAnalysis){ showStatus('Önce ana horary analizini çalıştır.', 'error'); return; }
     const btn = $('aiBtn');
-    btn.disabled = true;
-    const old = btn.textContent;
-    btn.textContent = 'AI yazıyor...';
+    if(btn){ btn.disabled = true; btn.textContent = 'AI yazıyor...'; }
     $('aiOutput').classList.remove('show');
     $('aiOutput').textContent = '';
-    setAIStatus('Worker router’a istek gönderiliyor. Auto seçiliyse sırayla ücretsiz modeller denenecek...', 'wait');
+    setAIStatus('AI agent düşünüyor. Harita teknik verisi Worker üzerinden modele gönderiliyor...', 'wait');
     try{
       const prompt = buildAIWriterPrompt(lastAnalysis, null);
       const {text, provider, model} = await runRouterPrompt(prompt, null);
+      lastAIAnswer = text;
       $('aiOutput').textContent = text;
       $('aiOutput').classList.add('show');
       setAIStatus('AI yorumu üretildi. Provider: '+provider+' · Model: '+model, 'ok');
+      showStatus('AI horary yorumu hazır.', 'ok');
     }catch(e){
-      setAIStatus('AI çalışmadı: '+(e && e.message ? e.message : e)+'. Offline rapor hâlâ geçerli.', 'error');
+      const msg = (e && e.message ? e.message : String(e));
+      lastAIAnswer = '';
+      const fallback = buildFallbackAIText(lastAnalysis, msg);
+      $('aiOutput').textContent = fallback;
+      $('aiOutput').classList.add('show');
+      $('report').classList.remove('hidden');
+      setAIStatus('AI çalışmadı: '+msg+'. Teknik fallback gösterildi.', 'error');
+      showStatus('AI çalışmadı. Teknik fallback gösterildi.', 'error');
     }finally{
-      btn.disabled = false;
-      btn.textContent = old;
+      if(btn){ btn.disabled = false; btn.textContent = 'AI Yorumu Üret'; }
     }
+  }
+
+  function buildFallbackAIText(a, err){
+    const metrics = deriveMetrics(a); const main = brutalMainVerdict(a, metrics);
+    const signals = buildSignalLines(a).slice(0,5).map(x => '- '+x.title+': '+x.text).join('\n');
+    return `AI bağlantısı cevap veremedi. Hata: ${err}\n\nNET TEKNİK HÜKÜM\n${main.headline}\n\n${main.final}\n\nYüzdeler:\n${Object.entries(metrics.public).map(([k,v])=>`- ${k}: ${Math.round(v)}%`).join('\n')}\n\nBunu şuradan anlıyoruz:\n${signals}\n\nBrutal sonuç: AI yorumu gelmedi ama teknik motorun okuması bu. Detaylı doğal dil için Worker/Gemini ayarını kontrol et.`;
   }
 
   async function askAIFollowup(){
     if(!lastAnalysis){ showStatus('Önce ana horary analizini çalıştır.', 'error'); return; }
     const q = $('followupInput').value.trim();
     if(!q) return;
-    const btn = $('aiFollowupBtn');
+    const btn = $('followupBtn');
     btn.disabled = true;
     const old = btn.textContent;
-    btn.textContent = 'AI yazıyor...';
+    btn.textContent = 'Cevap yazılıyor...';
     try{
-      setAIStatus('AI devam sorusu için router’a istek gönderiliyor...', 'wait');
+      setAIStatus('Devam sorusu aynı horary haritası üzerinden AI agent’a gönderiliyor...', 'wait');
       const prompt = buildAIWriterPrompt(lastAnalysis, q);
       const {text, provider, model} = await runRouterPrompt(prompt, q);
-      const ans = `<h4>AI devam cevabı</h4><div style="white-space:pre-wrap">${escapeHtml(text)}</div><p class="muted">Provider: ${escapeHtml(provider)} · Model: ${escapeHtml(model)}</p>`;
+      const ans = `<div style="white-space:pre-wrap">${escapeHtml(text)}</div><p class="muted">Provider: ${escapeHtml(provider)} · Model: ${escapeHtml(model)}</p>`;
+      followupHistory.push({q, ans});
+      lastAIAnswer = (lastAIAnswer ? lastAIAnswer + '\n\n--- DEVAM ---\n' : '') + 'Soru: '+q+'\nCevap: '+text;
+      if(lastAIAnswer.length > 12000) lastAIAnswer = lastAIAnswer.slice(-12000);
+      renderFollowups();
+      $('followupInput').value='';
+      setAIStatus('Devam cevabı eklendi. Provider: '+provider+' · Model: '+model, 'ok');
+    }catch(e){
+      const msg = (e && e.message ? e.message : String(e));
+      const fallback = buildFollowupAnswer(q, lastAnalysis);
+      const ans = `<p class="muted">AI cevap veremedi: ${escapeHtml(msg)}. Teknik fallback:</p>${fallback}`;
       followupHistory.push({q, ans});
       renderFollowups();
       $('followupInput').value='';
-      setAIStatus('AI devam cevabı eklendi. Provider: '+provider+' · Model: '+model, 'ok');
-    }catch(e){
-      setAIStatus('AI devam sorusu çalışmadı: '+(e && e.message ? e.message : e)+'. Offline devam butonu çalışır.', 'error');
+      setAIStatus('AI devam cevabı çalışmadı. Teknik fallback eklendi.', 'error');
     }finally{
       btn.disabled = false;
       btn.textContent = old;

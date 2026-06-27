@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Horary AI Router Tool v9</title>
+  <title>Horary AI Router Tool v10</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
   :root{
@@ -111,7 +111,26 @@
   .aiOutput{margin-top:12px; padding:15px; background:var(--paper); border:1px solid var(--paper3); border-radius:12px; font-size:14px; line-height:1.75; color:var(--ink2); white-space:pre-wrap; display:none;}
   .aiOutput.show{display:block;}
   .privacyNote{font-size:11.5px; color:var(--ink4); line-height:1.55; margin-top:9px;}
-  @media(max-width:520px){.percentGrid{grid-template-columns:1fr}.followActions,.aiControls{display:grid; grid-template-columns:1fr}.followBtn,.ghostBtn,.aiBtn,.aiFollowBtn,.modelSelect{width:100%}}
+
+  .selectGrid{display:grid; grid-template-columns:minmax(0,10fr) minmax(112px,2fr); gap:10px; align-items:end; margin-top:13px;}
+  .selectBlock .labelRow{margin-top:0}
+  .toneBox{display:grid; grid-template-columns:1fr; gap:6px; margin-top:7px; background:white; border:1px solid var(--paper3); border-radius:12px; padding:5px;}
+  .toneBox input{position:absolute; opacity:0; pointer-events:none;}
+  .toneBox label{display:flex; align-items:center; justify-content:center; min-height:31px; border-radius:9px; font-size:12px; font-weight:800; letter-spacing:.02em; text-transform:none; color:var(--ink3); cursor:pointer; transition:background .18s,color .18s,box-shadow .18s;}
+  .toneBox input:checked + label{background:var(--ink); color:var(--paper); box-shadow:0 8px 18px rgba(17,16,14,.12);}
+  .aiLoader{margin:12px 0 0; background:linear-gradient(180deg,#fffdf8,#f9f4eb); border:1px solid var(--line); border-radius:14px; padding:14px; overflow:hidden; position:relative;}
+  .aiLoaderTop{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
+  .pulseDot{width:10px;height:10px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 0 rgba(52,91,143,.42);animation:pulseDot 1.4s ease-out infinite; flex:0 0 auto;}
+  @keyframes pulseDot{70%{box-shadow:0 0 0 10px rgba(52,91,143,0)}100%{box-shadow:0 0 0 0 rgba(52,91,143,0)}}
+  .aiLoaderTitle{font-family:var(--serif); font-size:20px; letter-spacing:-.02em; color:var(--ink);}
+  .aiLoaderText{font-size:12.5px; color:var(--ink3); line-height:1.55; margin-top:2px;}
+  .loadTrack{height:5px; background:var(--paper2); border-radius:99px; overflow:hidden; border:1px solid var(--paper3);}
+  .loadFill{height:100%; width:45%; border-radius:99px; background:linear-gradient(90deg,var(--green),#65b891,var(--blue),var(--green)); background-size:240% 100%; animation:loadSweep 1.25s ease-in-out infinite;}
+  @keyframes loadSweep{0%{transform:translateX(-110%); background-position:0 0}100%{transform:translateX(260%); background-position:100% 0}}
+  .aiLoaderMeta{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:9px; font-size:11px; color:var(--ink4);}
+  .aiLoaderMeta b{color:var(--ink3); font-weight:800;}
+
+  @media(max-width:520px){.selectGrid{grid-template-columns:1fr}.toneBox{grid-template-columns:1fr 1fr}.percentGrid{grid-template-columns:1fr}.followActions,.aiControls{display:grid; grid-template-columns:1fr}.followBtn,.ghostBtn,.aiBtn,.aiFollowBtn,.modelSelect{width:100%}}
 
 </style>
 </head>
@@ -120,33 +139,44 @@
   <header>
     <div class="brand">
       <div class="logo">Hora<em>ry</em></div>
-      <div class="sub">Horary + Free AI Router</div>
+      <div class="sub">Horary + Free AI Router v10</div>
     </div>
     <div class="badge" id="clock">—</div>
   </header>
 
   <section class="hero">
     <h1>Soruyu yaz,<br><em>an haritasını</em> oku.</h1>
-    <p>Haritayı tarayıcıda hesaplar, sonra kendi ücretsiz model-router sunucuna gönderip uzun, agresif ve detaylı AI yorumu üretir. Saat ve konum otomatik alınır; manuel konum yok.</p>
+    <p>Haritayı tarayıcıda hesaplar, sonra kendi ücretsiz model-router sunucuna gönderip seçtiğin tona göre uzun, net ve detaylı AI yorumu üretir. Saat ve konum otomatik alınır; manuel konum yok.</p>
   </section>
 
   <section class="inputCard">
     <div class="labelRow"><label for="question">Soru</label><span class="hint">Konum + saat otomatik</span></div>
     <textarea id="question" placeholder="Örnek: TSKB alınır mı? / Bu iş olacak mı? / Beni arayacak mı?"></textarea>
 
-    <div class="labelRow" style="margin-top:13px"><label for="category">Kategori</label><span class="hint">Zorunlu seçim</span></div>
-    <select id="category">
-      <option value="general">Genel soru</option>
-      <option value="investment" selected>Yatırım / Para</option>
-      <option value="career">İş / Kariyer</option>
-      <option value="relationship">İlişki / Karşı taraf</option>
-      <option value="property">Ev / Taşınma / Mülk</option>
-      <option value="lost">Kayıp eşya</option>
-      <option value="legal">Hukuk / Resmi iş</option>
-      <option value="health">Sağlık</option>
-      <option value="education">Eğitim / Sınav</option>
-      <option value="travel">Yolculuk / Seyahat</option>
-    </select>
+    <div class="selectGrid">
+      <div class="selectBlock">
+        <div class="labelRow"><label for="category">Kategori</label><span class="hint">Zorunlu seçim</span></div>
+        <select id="category">
+          <option value="general">Genel soru</option>
+          <option value="investment" selected>Yatırım / Para</option>
+          <option value="career">İş / Kariyer</option>
+          <option value="relationship">İlişki / Karşı taraf</option>
+          <option value="property">Ev / Taşınma / Mülk</option>
+          <option value="lost">Kayıp eşya</option>
+          <option value="legal">Hukuk / Resmi iş</option>
+          <option value="health">Sağlık</option>
+          <option value="education">Eğitim / Sınav</option>
+          <option value="travel">Yolculuk / Seyahat</option>
+        </select>
+      </div>
+      <div class="selectBlock">
+        <div class="labelRow"><label>Ton</label><span class="hint">varsayılan</span></div>
+        <div class="toneBox" role="radiogroup" aria-label="Yorum tonu">
+          <input type="radio" id="toneBrutal" name="tone" value="brutal" checked><label for="toneBrutal">Agresif</label>
+          <input type="radio" id="toneNormal" name="tone" value="normal"><label for="toneNormal">Normal</label>
+        </div>
+      </div>
+    </div>
 
     <div class="controls">
       <button id="analyzeBtn" class="primary"><span class="spin"></span>Horary Analiz Et</button>
@@ -184,9 +214,9 @@
   <section id="aiCard" class="aiCard hidden">
     <div class="cardTitle">
       <b>AI Horary yorumu</b>
-      <span class="pill">Horary agent · net/brutal mod</span>
+      <span class="pill" id="tonePill">Horary agent · agresif mod</span>
     </div>
-    <p class="aiIntro">Ana yorum burada üretilecek. Tool haritayı ve teknik sinyalleri hesaplar; AI ise soruyu anlayıp bu verileri uzun, net ve sert bir yoruma çevirir. Kategori cevap kalıbı değildir; sadece haritada hangi göstergelerin ağır basacağını belirler.</p>
+    <p class="aiIntro">Ana yorum burada üretilecek. Tool haritayı ve teknik sinyalleri hesaplar; AI ise soruyu anlayıp bu verileri seçtiğin tona göre uzun, net ve yorumlu bir cevaba çevirir. Kategori cevap kalıbı değildir; sadece haritada hangi göstergelerin ağır basacağını belirler.</p>
     <div class="aiControls" style="display:none">
       <select id="aiProvider" class="modelSelect" aria-label="AI sağlayıcı">
         <option value="auto" selected>Auto Router — çalışan ilk free model</option>
@@ -199,6 +229,11 @@
     </div>
     <input id="aiEndpoint" class="endpointInput" style="display:none" placeholder="Worker URL: https://horary-slave.akiftolgonen.workers.dev/analyze" />
     <div id="aiStatus" class="aiStatus">AI router bağlı. Analizden sonra otomatik cevap üretilecek.</div>
+    <div id="aiLoader" class="aiLoader hidden">
+      <div class="aiLoaderTop"><div class="pulseDot"></div><div><div class="aiLoaderTitle">AI sizin için cevaplıyor</div><div id="aiLoaderText" class="aiLoaderText">Horary haritası ve teknik sinyaller hazırlanıyor...</div></div></div>
+      <div class="loadTrack"><div class="loadFill"></div></div>
+      <div class="aiLoaderMeta"><span id="aiLoaderAttempt">1. deneme hazırlanıyor</span><b>Detaylı yorum modu</b></div>
+    </div>
     <div id="aiOutput" class="aiOutput"></div>
     <p class="privacyNote">Not: AI yorumu için soru ve horary sinyalleri senin Cloudflare Worker’ına gider. API key HTML içinde görünmez; Worker secret olarak saklanır. AI çalışmazsa teknik fallback saklı kalır.</p>
   </section>
@@ -290,13 +325,17 @@
   let lastAIAnswer = '';
 
   function init(){
-    $('question').value = localStorage.getItem('horary_q') || '';
+    $('question').value = '';
     $('category').value = localStorage.getItem('horary_cat') || 'investment';
-    $('question').addEventListener('input', () => localStorage.setItem('horary_q', $('question').value));
+    const savedTone = localStorage.getItem('horary_tone') || 'brutal';
+    const toneEl = document.querySelector(`input[name="tone"][value="${savedTone}"]`) || $('toneBrutal');
+    if(toneEl) toneEl.checked = true;
+    updateTonePill();
     $('category').addEventListener('change', () => localStorage.setItem('horary_cat', $('category').value));
+    document.querySelectorAll('input[name="tone"]').forEach(el => el.addEventListener('change', () => { localStorage.setItem('horary_tone', getTone()); updateTonePill(); }));
     $('analyzeBtn').addEventListener('click', analyzeNow);
     $('copyReport').addEventListener('click', copyReport);
-    $('clearBtn').addEventListener('click', () => { $('question').value=''; localStorage.removeItem('horary_q'); lastAIAnswer=''; clearFollowups(true); $('answerCard').classList.add('hidden'); $('report').classList.add('hidden'); $('mainResult').classList.add('hidden'); $('followCard').classList.add('hidden'); $('aiCard').classList.add('hidden'); $('aiOutput').classList.remove('show'); $('aiOutput').textContent=''; $('aiStatus').textContent='AI router hazır. Endpoint otomatik tanımlı.'; });
+    $('clearBtn').addEventListener('click', () => { $('question').value=''; lastAIAnswer=''; clearFollowups(true); $('answerCard').classList.add('hidden'); $('report').classList.add('hidden'); $('mainResult').classList.add('hidden'); $('followCard').classList.add('hidden'); $('aiCard').classList.add('hidden'); $('aiOutput').classList.remove('show'); $('aiOutput').textContent=''; hideAILoader(); $('aiStatus').textContent='AI router hazır. Endpoint otomatik tanımlı.'; });
     $('followupBtn').addEventListener('click', askAIFollowup);
     if($('aiBtn')) $('aiBtn').addEventListener('click', () => generateAIAnswer(false));
     $('aiEndpoint').value = localStorage.getItem('horary_ai_endpoint') || DEFAULT_AI_ENDPOINT;
@@ -1022,6 +1061,7 @@
     return `HORARY AI AGENT GÖREVİ
 
 MOD: ${questionMode}
+YORUM TONU: ${getTone() === 'normal' ? 'NORMAL / sakin ama net' : 'AGRESIF / brutal honest'}
 
 KULLANICI SORUSU / BAĞLAM:
 ${a.ctx.question}
@@ -1112,6 +1152,54 @@ Sert, net, detaylı, doğrudan. Kullanıcı moral metni istemiyor. "Olur gibi am
     el.style.color = cls==='error' ? 'var(--red)' : cls==='ok' ? 'var(--green)' : 'var(--ink3)';
   }
 
+  let aiLoadTimer = null;
+  let aiLoadStarted = 0;
+  const LOAD_MESSAGES = [
+    'Horary haritası açılıyor...',
+    'Gezegenler, evler ve Ay akışı okunuyor...',
+    'Teknik sinyaller AI için hazırlanıyor...',
+    'AI yorumcu soruyu parçalara ayırıyor...',
+    '1. deneme çalışıyor...',
+    'Gerekirse otomatik tekrar denenecek...',
+    'Detaylı cevap yazılıyor, biraz uzun sürebilir...'
+  ];
+  function getTone(){
+    const el = document.querySelector('input[name="tone"]:checked');
+    return el ? el.value : 'brutal';
+  }
+  function updateTonePill(){
+    const tone = getTone();
+    const pill = $('tonePill');
+    if(pill) pill.textContent = tone === 'normal' ? 'Horary agent · normal mod' : 'Horary agent · agresif mod';
+  }
+  function showAILoader(kind){
+    const box = $('aiLoader');
+    if(!box) return;
+    box.classList.remove('hidden');
+    aiLoadStarted = Date.now();
+    let i = 0;
+    const label = kind === 'followup' ? 'Devam cevabı hazırlanıyor' : 'AI sizin için cevaplıyor';
+    const title = box.querySelector('.aiLoaderTitle');
+    if(title) title.textContent = label;
+    const setMsg = () => {
+      const elapsed = Math.floor((Date.now() - aiLoadStarted) / 1000);
+      const attempt = Math.min(4, Math.max(1, Math.floor(elapsed / 9) + 1));
+      if($('aiLoaderAttempt')) $('aiLoaderAttempt').textContent = `${attempt}. deneme / 4 deneme hakkı`;
+      if($('aiLoaderText')) $('aiLoaderText').textContent = LOAD_MESSAGES[i % LOAD_MESSAGES.length];
+      i++;
+    };
+    setMsg();
+    clearInterval(aiLoadTimer);
+    aiLoadTimer = setInterval(setMsg, 1800);
+  }
+  function hideAILoader(finalText){
+    clearInterval(aiLoadTimer);
+    aiLoadTimer = null;
+    if(finalText && $('aiLoaderText')) $('aiLoaderText').textContent = finalText;
+    const box = $('aiLoader');
+    if(box) box.classList.add('hidden');
+  }
+
   function getRouterEndpoint(){
     const el = $('aiEndpoint');
     const val = el ? el.value.trim() : '';
@@ -1144,7 +1232,8 @@ Sert, net, detaylı, doğrudan. Kullanıcı moral metni istemiyor. "Olur gibi am
       category: lastAnalysis ? lastAnalysis.categoryInfo.name : null,
       question: lastAnalysis ? lastAnalysis.ctx.question : null,
       followup: followupQuestion || null,
-      client: 'horary-router-tool-v9'
+      client: 'horary-router-tool-v10',
+      tone: getTone()
     };
     const res = await fetch(endpoint, {
       method: 'POST',
@@ -1157,7 +1246,7 @@ Sert, net, detaylı, doğrudan. Kullanıcı moral metni istemiyor. "Olur gibi am
     }
     const text = normalizeRouterText(payload).trim();
     if(!text || text.length < 180) throw new Error('AI cevabı çok kısa veya boş geldi. Sağlayıcı limitte olabilir; Auto Router ya da başka provider dene.');
-    return { text, provider: payload.provider || provider, model: payload.model || 'auto' };
+    return { text, provider: payload.provider || provider, model: payload.model || 'auto', attempt: payload.attempt || null, maxRetries: payload.maxRetries || null, tone: payload.tone || getTone() };
   }
 
   async function generateAIAnswer(autoRun){
@@ -1167,13 +1256,16 @@ Sert, net, detaylı, doğrudan. Kullanıcı moral metni istemiyor. "Olur gibi am
     $('aiOutput').classList.remove('show');
     $('aiOutput').textContent = '';
     setAIStatus('AI agent düşünüyor. Harita teknik verisi Worker üzerinden modele gönderiliyor...', 'wait');
+    showAILoader('main');
     try{
       const prompt = buildAIWriterPrompt(lastAnalysis, null);
-      const {text, provider, model} = await runRouterPrompt(prompt, null);
+      const {text, provider, model, attempt, maxRetries} = await runRouterPrompt(prompt, null);
       lastAIAnswer = text;
       $('aiOutput').textContent = text;
       $('aiOutput').classList.add('show');
-      setAIStatus('AI yorumu üretildi. Provider: '+provider+' · Model: '+model, 'ok');
+      hideAILoader('AI yorumu hazır.');
+      const retryNote = attempt ? ` · ${attempt}/${maxRetries || '?'} deneme` : '';
+      setAIStatus('AI yorumu üretildi. Provider: '+provider+' · Model: '+model+retryNote, 'ok');
       showStatus('AI horary yorumu hazır.', 'ok');
     }catch(e){
       const msg = (e && e.message ? e.message : String(e));
@@ -1182,6 +1274,7 @@ Sert, net, detaylı, doğrudan. Kullanıcı moral metni istemiyor. "Olur gibi am
       $('aiOutput').textContent = fallback;
       $('aiOutput').classList.add('show');
       $('report').classList.remove('hidden');
+      hideAILoader();
       setAIStatus('AI çalışmadı: '+msg+'. Teknik fallback gösterildi.', 'error');
       showStatus('AI çalışmadı. Teknik fallback gösterildi.', 'error');
     }finally{
@@ -1205,15 +1298,18 @@ Sert, net, detaylı, doğrudan. Kullanıcı moral metni istemiyor. "Olur gibi am
     btn.textContent = 'Cevap yazılıyor...';
     try{
       setAIStatus('Devam sorusu aynı horary haritası üzerinden AI agent’a gönderiliyor...', 'wait');
+      showAILoader('followup');
       const prompt = buildAIWriterPrompt(lastAnalysis, q);
-      const {text, provider, model} = await runRouterPrompt(prompt, q);
+      const {text, provider, model, attempt, maxRetries} = await runRouterPrompt(prompt, q);
       const ans = `<div style="white-space:pre-wrap">${escapeHtml(text)}</div><p class="muted">Provider: ${escapeHtml(provider)} · Model: ${escapeHtml(model)}</p>`;
       followupHistory.push({q, ans});
       lastAIAnswer = (lastAIAnswer ? lastAIAnswer + '\n\n--- DEVAM ---\n' : '') + 'Soru: '+q+'\nCevap: '+text;
       if(lastAIAnswer.length > 12000) lastAIAnswer = lastAIAnswer.slice(-12000);
       renderFollowups();
       $('followupInput').value='';
-      setAIStatus('Devam cevabı eklendi. Provider: '+provider+' · Model: '+model, 'ok');
+      hideAILoader('Devam cevabı hazır.');
+      const retryNote = attempt ? ` · ${attempt}/${maxRetries || '?'} deneme` : '';
+      setAIStatus('Devam cevabı eklendi. Provider: '+provider+' · Model: '+model+retryNote, 'ok');
     }catch(e){
       const msg = (e && e.message ? e.message : String(e));
       const fallback = buildFollowupAnswer(q, lastAnalysis);
@@ -1221,6 +1317,7 @@ Sert, net, detaylı, doğrudan. Kullanıcı moral metni istemiyor. "Olur gibi am
       followupHistory.push({q, ans});
       renderFollowups();
       $('followupInput').value='';
+      hideAILoader();
       setAIStatus('AI devam cevabı çalışmadı. Teknik fallback eklendi.', 'error');
     }finally{
       btn.disabled = false;

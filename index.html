@@ -137,6 +137,10 @@
   @keyframes loadSweep{0%{transform:translateX(-110%); background-position:0 0}100%{transform:translateX(260%); background-position:100% 0}}
   .aiLoaderMeta{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:9px; font-size:11px; color:var(--ink4);}
   .aiLoaderMeta b{color:var(--ink3); font-weight:800;}
+  .followLoader{margin-top:12px; margin-bottom:2px;}
+  .followLoader .aiLoaderTitle{font-size:18px;}
+  .followLoader .aiLoaderText{font-size:12.3px;}
+
 
   @media(max-width:520px){.selectGrid{grid-template-columns:1fr}.toneBox{grid-template-columns:repeat(3,1fr)}.percentGrid{grid-template-columns:1fr}.followActions,.aiControls{display:grid; grid-template-columns:1fr}.followBtn,.ghostBtn,.aiBtn,.aiFollowBtn,.modelSelect{width:100%}}
 
@@ -147,7 +151,7 @@
   <header>
     <div class="brand">
       <div class="logo">Hora<em>ry</em></div>
-      <div class="sub">Horary + Free AI Router v11</div>
+      <div class="sub">Horary + Free AI Router v15</div>
     </div>
     <div class="badge" id="clock">—</div>
   </header>
@@ -258,6 +262,17 @@
       <button id="followupBtn" class="followBtn">Cevapla</button>
       <button id="clearFollowups" class="ghostBtn">Devamı Temizle</button>
     </div>
+    <div id="followLoader" class="aiLoader followLoader hidden">
+      <div class="aiLoaderTop">
+        <div class="pulseDot"></div>
+        <div>
+          <div class="aiLoaderTitle">Devam cevabı hazırlanıyor</div>
+          <div id="followLoaderText" class="aiLoaderText">Aynı horary haritası üzerinden devam sorusu okunuyor...</div>
+        </div>
+      </div>
+      <div class="loadTrack"><div class="loadFill"></div></div>
+      <div class="aiLoaderMeta"><span id="followLoaderAttempt">1. deneme hazırlanıyor</span><b id="followLoaderMode">Aynı harita · AI yorum</b></div>
+    </div>
     <div id="followupThread" class="followThread"></div>
   </section>
 
@@ -345,7 +360,7 @@
     document.querySelectorAll('input[name="tone"]').forEach(el => el.addEventListener('change', () => { localStorage.setItem('horary_tone', getTone()); updateTonePill(); applyToneTheme(); }));
     $('analyzeBtn').addEventListener('click', analyzeNow);
     $('copyReport').addEventListener('click', copyReport);
-    $('clearBtn').addEventListener('click', () => { $('question').value=''; lastAIAnswer=''; clearFollowups(true); $('answerCard').classList.add('hidden'); $('report').classList.add('hidden'); $('mainResult').classList.add('hidden'); $('followCard').classList.add('hidden'); $('aiCard').classList.add('hidden'); $('aiOutput').classList.remove('show'); $('aiOutput').textContent=''; hideAILoader(); $('aiStatus').textContent='AI router hazır. Endpoint otomatik tanımlı.'; });
+    $('clearBtn').addEventListener('click', () => { $('question').value=''; lastAIAnswer=''; clearFollowups(true); $('answerCard').classList.add('hidden'); $('report').classList.add('hidden'); $('mainResult').classList.add('hidden'); $('followCard').classList.add('hidden'); $('aiCard').classList.add('hidden'); $('aiOutput').classList.remove('show'); $('aiOutput').textContent=''; hideAILoader(); hideFollowLoader(); $('aiStatus').textContent='AI router hazır. Endpoint otomatik tanımlı.'; });
     $('followupBtn').addEventListener('click', askAIFollowup);
     if($('aiBtn')) $('aiBtn').addEventListener('click', () => generateAIAnswer(false));
     $('aiEndpoint').value = localStorage.getItem('horary_ai_endpoint') || DEFAULT_AI_ENDPOINT;
@@ -672,27 +687,32 @@
     const rec = receptionScore(q,t,positions);
     technical.push(`Soru sahibi: 1. ev yöneticisi ${PNAME[q]} ve Ay.`);
     technical.push(`Sorulan konu: ${categoryInfo.targetHouse}. ev (${categoryInfo.targetLabel}) yöneticisi ${PNAME[t]}.`);
-    if(mainAsp){
+    if(q === t){
+      score += 10;
+      positives.push(`Soru sahibi ve konu aynı göstergede birleşiyor: ${PNAME[q]}. Bu, konunun kullanıcıdan tamamen kopuk olmadığını; meselenin doğrudan onun alanına bağlı olduğunu gösterir. Tek başına garanti evet değildir ama “bağ yok” diye okunmaz.`);
+    }else if(mainAsp){
       if(mainAsp.applying){
         if(mainAsp.type === 'good'){ score += 25; positives.push(`${PNAME[q]} ile ${PNAME[t]} arasında yaklaşan ${mainAsp.name} var. Bu, soru sahibi ile konu arasında bağlantının kurulmakta olduğunu gösterir.`); }
         else if(mainAsp.type === 'bad'){ score -= 8; negatives.push(`${PNAME[q]} ile ${PNAME[t]} arasında yaklaşan ${mainAsp.name} var. Bağlantı var ama sürtünme, engel veya bedel üzerinden çalışıyor.`); }
         else { score += 12; positives.push(`${PNAME[q]} ile ${PNAME[t]} arasında yaklaşan kavuşum var. Konu ile doğrudan temas var; kalitesi gezegenlerin gücüne bağlı.`); }
       }else{
-        score -= 12; negatives.push(`${PNAME[q]} ile ${PNAME[t]} arasındaki ${mainAsp.name} ayrılan durumda. Bu, ana temasın geçmişte kaldığını veya mevcut soruda ivmenin zayıfladığını gösterir.`);
+        const sepPenalty = mainAsp.type === 'good' ? -4 : mainAsp.type === 'bad' ? -8 : -3;
+        score += sepPenalty;
+        negatives.push(`${PNAME[q]} ile ${PNAME[t]} arasındaki ${mainAsp.name} ayrılan durumda. Bu, bağın tamamen yokluğundan çok ivmenin geçmişte kaldığını veya konunun tekrar enerji istemesini gösterir.`);
       }
-    }else{ score -= 18; negatives.push(`${PNAME[q]} ile ${PNAME[t]} arasında geçerli ana açı yok. Horary’de bu, soru sahibi ile konu arasında doğrudan bağın zayıf olduğunu gösterir.`); }
+    }else{ score -= 10; negatives.push(`${PNAME[q]} ile ${PNAME[t]} arasında geçerli ana açı yok. Bu bağlantıyı zayıflatır ama tek başına kesin hayır değildir; Ay’ın akışı, reception ve konu göstergesinin gücüyle birlikte okunmalıdır.`); }
     if(moonAspTarget){
       if(moonAspTarget.applying && moonAspTarget.type === 'good'){ score += 18; positives.push(`Ay, ${PNAME[t]} ile yaklaşan ${moonAspTarget.name} yapıyor. Ay olayın akışını gösterdiği için süreç konuya doğru destekli ilerleyebilir.`); }
       else if(moonAspTarget.applying && moonAspTarget.type === 'bad'){ score -= 10; negatives.push(`Ay, ${PNAME[t]} ile yaklaşan ${moonAspTarget.name} yapıyor. Olay konuya gidiyor ama stresli/sert bir aşamadan geçiyor.`); }
-      else { score -= 5; negatives.push(`Ay'ın ${PNAME[t]} ile açısı ayrılan durumda. Olayın ana desteği şu andan çok geçmişte kalmış olabilir.`); }
+      else { score -= 2; negatives.push(`Ay'ın ${PNAME[t]} ile açısı ayrılan durumda. Olayın ana desteği şu anda güçlü akmıyor; yine de bu tek başına kesin kapanış değildir.`); }
     }else if(moonInfo.next && moonInfo.next.planet === t){
       const asp = moonInfo.next.aspect;
       if(asp.type === 'good'){ score += 15; positives.push(`Ay burçtan çıkmadan ${PNAME[t]} ile ${asp.name} yapacak. Bu, olayın sonraki adımında konuya bağlanma potansiyelidir.`); }
-      else { score -= 7; negatives.push(`Ay burçtan çıkmadan ${PNAME[t]} ile ${asp.name} yapacak. Konu gündeme gelir ama zorlayıcı ilerleyebilir.`); }
+      else { score -= 4; negatives.push(`Ay burçtan çıkmadan ${PNAME[t]} ile ${asp.name} yapacak. Konu gündeme gelir ama daha dikkatli/sert bir aşamadan geçebilir.`); }
     }else{
-      score -= 6; negatives.push(`Ay'ın sorulan konunun yöneticisine doğrudan destekleyici bir sonraki teması görünmüyor.`);
+      score -= 3; negatives.push(`Ay'ın sorulan konunun yöneticisine doğrudan destekleyici bir sonraki teması görünmüyor. Bu akışı yavaşlatır; ama diğer olumlu göstergeleri otomatik iptal etmez.`);
     }
-    if(moonInfo.voidOfCourse){ score -= 25; negatives.push('Ay boşlukta görünüyor. Klasik horary’de bu, olayın beklenen şekilde ilerlememesi veya mevcut durumun değişmeden kalması anlamına gelebilir.'); }
+    if(moonInfo.voidOfCourse){ score -= 12; negatives.push('Ay boşlukta görünüyor. Klasik horary’de bu, olayın hemen değişmeyebileceğini, sürecin yavaşlayabileceğini veya mevcut durumun korunabileceğini gösterir. Bu tek başına kesin hayır değildir; daha çok “şimdilik akış zayıf / bekle” sinyalidir.'); }
     else if(moonInfo.next){
       const nx = moonInfo.next;
       const s = nx.aspect.type === 'good' ? 7 : nx.aspect.type === 'bad' ? -5 : 2;
@@ -708,7 +728,7 @@
     score += rec.score; technical.push(`Reception: ${rec.text}.`);
     if(rec.score > 0) positives.push(`Reception olumlu: taraflar arasında sembolik kabul var. Bunu “konu soru sahibine cevap verebiliyor” şeklinde okuruz.`);
     if(rec.score < 0) negatives.push(`Reception olumsuz: taraflar birbirini rahat taşımıyor. Bu, sonucun daha zor veya memnuniyetsiz olabileceğini gösterir.`);
-    for(const w of radical){ score -= 8; negatives.push(w.text); }
+    for(const w of radical){ score -= 4; negatives.push(w.text); }
     if(a.ctx.category === 'investment') applyInvestmentRules(a, {scoreRef:{get:()=>score,set:v=>score=v}, positives, negatives, technical});
     if(a.ctx.category === 'relationship') applyRelationshipRules(a, {scoreRef:{get:()=>score,set:v=>score=v}, positives, negatives, technical});
     const timing = estimateTiming(mainAsp || moonAspTarget || (moonInfo.next ? {p1:'Moon',p2:moonInfo.next.planet,angle:moonInfo.next.aspect.angle,orb:moonInfo.next.distance,applying:true,name:moonInfo.next.aspect.name,type:moonInfo.next.aspect.type} : null), positions, q, t);
@@ -755,12 +775,12 @@
   }
   function signMode(s){ return ['cardinal','fixed','mutable'][s%3]; }
   function verdictFromScore(score){
-    if(score >= 85) return {label:'GÜÇLÜ EVET', cls:'good', desc:'Harita olumlu göstergeleri belirgin şekilde öne çıkarıyor.'};
-    if(score >= 70) return {label:'EVET AMA ŞARTLI', cls:'good', desc:'Olumlu taraf ağır basıyor; yine de bazı koşullar veya gecikmeler var.'};
-    if(score >= 55) return {label:'ZAYIF EVET / DİKKATLİ İLERLE', cls:'warn', desc:'Olumlu işaret var ama tam güvenli değil. Küçük adım, teyit veya bekleme daha doğru olabilir.'};
-    if(score >= 45) return {label:'BELİRSİZ / BEKLE', cls:'warn', desc:'Harita net sonuç vermiyor. Soru veya durum olgunlaşmamış olabilir.'};
-    if(score >= 30) return {label:'ZAYIF HAYIR', cls:'bad', desc:'Olumsuz ve engelleyici göstergeler daha ağır.'};
-    return {label:'GÜÇLÜ HAYIR', cls:'bad', desc:'Harita mevcut şartlarda destek vermiyor.'};
+    if(score >= 82) return {label:'GÜÇLÜ EVET', cls:'good', desc:'Harita olumlu göstergeleri belirgin şekilde öne çıkarıyor.'};
+    if(score >= 66) return {label:'EVET AMA ŞARTLI', cls:'good', desc:'Olumlu taraf ağır basıyor; yine de bazı koşullar veya gecikmeler var.'};
+    if(score >= 50) return {label:'ZAYIF EVET / DİKKATLİ İLERLE', cls:'warn', desc:'Olumlu işaret var ama tam güvenli değil. Küçük adım, teyit veya bekleme daha doğru olabilir.'};
+    if(score >= 36) return {label:'BELİRSİZ / BEKLE', cls:'warn', desc:'Harita net sonuç vermiyor. Soru veya durum olgunlaşmamış olabilir.'};
+    if(score >= 22) return {label:'ZAYIF HAYIR', cls:'bad', desc:'Olumsuz ve engelleyici göstergeler daha ağır; ama bu doğrudan “imkânsız” anlamına gelmez.'};
+    return {label:'GÜÇLÜ HAYIR', cls:'bad', desc:'Harita mevcut şartlarda ciddi destek vermiyor.'};
   }
   function clamp(x,a,b){ return Math.max(a, Math.min(b,x)); }
 
@@ -951,7 +971,7 @@
     if(main && main.applying && main.type==='bad') healthyFuture -= 12;
     if(positions.Saturn.house===7) healthyFuture -= 20;
     if(positions[t].strength < -10) healthyFuture -= 8;
-    if(a.moonInfo.voidOfCourse) healthyFuture -= 18;
+    if(a.moonInfo.voidOfCourse) healthyFuture -= 9;
     let conflictRisk = 35;
     if(positions.Saturn.house===7) conflictRisk += 25;
     if(positions[t].house===8) conflictRisk += 15;
@@ -962,8 +982,8 @@
     if(tInQ.major || qInT.major) continuation += 18;
     if(main && main.applying) continuation += 12;
     if(moonT && moonT.applying) continuation += 10;
-    if(a.moonInfo.voidOfCourse) continuation -= 15;
-    return {public:{'Aslı tarafı duygu':clamp(querentLove,0,100),'Gürkan tarafı bağ':clamp(partnerLove,0,100),'Sağlıklı gelecek':clamp(healthyFuture,0,100),'Tartışma riski':clamp(conflictRisk,0,100),'Kısa vade devam':clamp(continuation,0,100)}, raw:{querentLove,partnerLove,healthyFuture,conflictRisk,continuation}};
+    if(a.moonInfo.voidOfCourse) continuation -= 8;
+    return {public:{'Soru sahibi tarafı duygu':clamp(querentLove,0,100),'Karşı taraf bağı':clamp(partnerLove,0,100),'Sağlıklı gelecek':clamp(healthyFuture,0,100),'Tartışma riski':clamp(conflictRisk,0,100),'Kısa vade devam':clamp(continuation,0,100)}, raw:{querentLove,partnerLove,healthyFuture,conflictRisk,continuation}};
   }
   function deriveInvestmentMetrics(a){
     const s=a.rule.score;
@@ -974,7 +994,7 @@
     if(moneySpec && moneySpec.applying && moneySpec.type==='bad'){ entry-=10; risk+=12; }
     if(moonRisk && moonRisk.applying && moonRisk.type==='bad') risk+=22;
     if(a.positions[riskR].strength > 10) risk+=14;
-    if(a.moonInfo.voidOfCourse){ wait+=20; entry-=15; }
+    if(a.moonInfo.voidOfCourse){ wait+=12; entry-=7; }
     wait += Math.max(0, 55-s)/2;
     return {public:{'Giriş desteği':clamp(entry,0,100),'Yukarı potansiyel':clamp(upside,0,100),'Risk baskısı':clamp(risk,0,100),'Bekleme sinyali':clamp(wait,0,100)}, raw:{entry,risk,wait,upside}};
   }
@@ -1023,7 +1043,7 @@
   function relationshipDive(a, metrics){
     const m=metrics.public, q=a.sigs.querentRuler, t=a.sigs.targetRuler;
     const qInT=isInDignityOf(q,t,a.positions), tInQ=isInDignityOf(t,q,a.positions);
-    const qLove = Math.round(m['Aslı tarafı duygu']), pLove=Math.round(m['Gürkan tarafı bağ']);
+    const qLove = Math.round(m['Soru sahibi tarafı duygu']), pLove=Math.round(m['Karşı taraf bağı']);
     const qText = qInT.major ? `Soru sahibinin göstergesi ${PNAME[q]}, karşı tarafın yönettiği burçta. Bu, soru sahibinde doğrudan çekim/bağ olduğunu gösterir.` : qInT.minor ? `Soru sahibinin göstergesi karşı tarafın yüceldiği alanda. Bu, hayranlık/idealize etme karışımı verebilir.` : `Soru sahibinin göstergesi karşı tarafın güçlü alanında değil. Bu, duygunun saf aşk olmaktan çok sorgu, gurur, kırgınlık veya güven ihtiyacıyla karıştığını gösterir.`;
     const pText = tInQ.major ? `Karşı tarafın göstergesi ${PNAME[t]}, soru sahibinin yönettiği burçta. Bu güçlü bir bağ/çekim göstergesidir.` : tInQ.minor ? `Karşı taraf göstergesi soru sahibinin yüceldiği alanda. Bu, ilgi ve değer verme göstergesidir ama tek başına istikrar garantisi değildir.` : `Karşı taraf göstergesi soru sahibinin ana alanında değil. Bu, bağın zayıf veya davranışın tutarsız olabileceğini gösterir.`;
     const badPartner = a.positions[t].strength < -10 ? `${PNAME[t]} zayıf durumda (${a.positions[t].dignityText}). Bu yüzden his olsa bile bunu olgun, güvenli ve istikrarlı göstermekte zorlanır.` : `${PNAME[t]} çok zayıf değil; bu karşı tarafın tamamen dağılmış olmadığını gösterir.`;
@@ -1068,10 +1088,25 @@
     const prevBlock = followupQuestion && lastAIAnswer ? `\nÖNCEKİ AI YORUMUNDAN BAĞLAM:\n${lastAIAnswer.slice(0, 4500)}` : '';
     const historyBlock = followupHistory.length ? `\nÖNCEKİ DEVAM SORULARI:\n${followupHistory.map((h,i)=>`${i+1}) ${h.q}`).join('\n')}` : '';
     const hardVerdicts = buildHardVerdicts(a, metrics, main);
+    const tone = getTone();
+    const toneLabel = tone === 'normal' ? 'NORMAL / sakin ama net' : tone === 'optimist' ? 'OPTIMIST / umut veren, kullanıcıyı suçlamayan, koruyucu ama net' : 'AGRESIF / brutal honest';
+    const toneInstruction = tone === 'optimist'
+      ? `- Optimist moddasın: kullanıcıyı suçlama, yargılama veya ana hata kaynağı gibi yazma.
+- Sorunu mümkün olduğunca dış koşul, karşı taraf, zamanlama, araç/enstrüman, süreç veya dinamik tarafında oku.
+- Hayır veya zayıf sonuç varsa bunu kullanıcının değeriyle ilişkilendirme. "Bu senin yanlışlığın değil; bu şartlar şu an rahat akmıyor" çizgisini koru.
+- Umut varsa görünür yap; risk varsa yumuşak ama net söyle.
+- Son bölümde "Sıcak final" ver.`
+      : tone === 'normal'
+        ? `- Normal moddasın: sakin, dengeli ve net yaz.
+- Kötü sinyal varsa açıkça söyle ama dramatize etme.
+- Son bölümde "Net sonuç" ver.`
+        : `- Agresif moddasın: sert, net, doğrudan ve brutal honest yaz.
+- Kötü sinyal varsa açıkça söyle. Hayır demekten korkma.
+- Son bölümde "Brutal sonuç" ver.`;
     return `HORARY AI AGENT GÖREVİ
 
 MOD: ${questionMode}
-YORUM TONU: ${getTone() === 'normal' ? 'NORMAL / sakin ama net' : 'AGRESIF / brutal honest'}
+YORUM TONU: ${toneLabel}
 
 KULLANICI SORUSU / BAĞLAM:
 ${a.ctx.question}
@@ -1108,8 +1143,12 @@ Başlık: ${main.headline}
 Açıklama: ${main.body}
 Final: ${main.final}
 
-HARD VERDICTS / KAÇMAMAN GEREKEN NET KARARLAR:
+MOTORUN YARDIMCI ÖN HÜKMÜ / MEKANİK DEĞİL, BAĞLAMLA YORUMLA:
 ${hardVerdicts}
+
+ÖNEMLİ DENGE KURALI:
+- Motor skoru yardımcıdır; AI cevabı bunu körü körüne tekrarlamasın. Özellikle Ay boşlukta, ayrılan açı veya ana açı yokluğu tek başına otomatik “kesin hayır” değildir. Bunları “akış yavaş / durum donuk / teyit bekle” olarak yorumla ve olumlu göstergelerle birlikte tart.
+- Aynı haritada olumlu reception, konu göstergesinin gücü, Ay’ın başka destekleyici teması veya bağ göstergeleri varsa cevabı tamamen negatife gömme.
 
 CEVAP DAVRANIŞI:
 - Önce kullanıcının sorusunu anla. İçindeki açık/örtük alt soruları çıkar.
@@ -1118,13 +1157,12 @@ CEVAP DAVRANIŞI:
 - Sonra sorunun içindeki alt sorulara tek tek cevap ver. Kullanıcı hisse sorduysa hisseye; ilişki sorduysa ilişkinin sorduğu yönüne; iş sorduysa işe odaklan.
 - "Bunu şuradan anlıyoruz" diyerek teknik sinyali sade dile çevir.
 - Yüzde ver. Arada kaldığın yerde bile net dağıtım yap.
-- Kötü sinyal varsa açıkça söyle. Hayır demekten korkma.
 - Haritada olmayan şeyi kesin gerçekmiş gibi uydurma. Bağlam varsa kullan ama kanıt gibi abartma.
 - Ana soruysa uzun ve detaylı yaz. Devam sorusuysa daha direkt ama yine açıklamalı yaz.
-- Son bölümde "Brutal sonuç" ver.
+${toneInstruction}
 
 İSTENEN TON:
-Sert, net, detaylı, doğrudan. Kullanıcı moral metni istemiyor. "Olur gibi ama bilemem" yazma. İyi/kötü ayrımını keskin kur. Ama saçma kesinlik veya iftira üretme.`;
+${toneLabel}. Netlik korunacak; ama seçilen tona aykırı bir final başlığı veya üslup kullanma.`;
   }
 
   function buildHardVerdicts(a, metrics, main){
@@ -1133,7 +1171,7 @@ Sert, net, detaylı, doğrudan. Kullanıcı moral metni istemiyor. "Olur gibi am
     lines.push(`Genel skor: ${a.rule.score}/100 (${a.rule.verdict.label})`);
     lines.push(`Ana hüküm: ${main.final}`);
     if(a.ctx.category === 'relationship'){
-      const q = Math.round(m['Aslı tarafı duygu'] ?? 50), p = Math.round(m['Gürkan tarafı bağ'] ?? 50), h = Math.round(m['Sağlıklı gelecek'] ?? 50), c = Math.round(m['Tartışma riski'] ?? 50), cont = Math.round(m['Kısa vade devam'] ?? 50);
+      const q = Math.round(m['Soru sahibi tarafı duygu'] ?? 50), p = Math.round(m['Karşı taraf bağı'] ?? 50), h = Math.round(m['Sağlıklı gelecek'] ?? 50), c = Math.round(m['Tartışma riski'] ?? 50), cont = Math.round(m['Kısa vade devam'] ?? 50);
       lines.push(`Soru sahibi tarafı duygu/bağ: ${q}%. 60 üstü güçlü, 40-60 karışık, 40 altı zayıf oku.`);
       lines.push(`Karşı taraf bağı: ${p}%. Bu sevgi/bağ gösterebilir ama davranış kalitesiyle aynı şey değildir.`);
       lines.push(`Sağlıklı gelecek: ${h}%. 45 altıysa net şekilde "sağlıklı değil / zor" de.`);
@@ -1218,6 +1256,46 @@ Sert, net, detaylı, doğrudan. Kullanıcı moral metni istemiyor. "Olur gibi am
     aiLoadTimer = null;
     if(finalText && $('aiLoaderText')) $('aiLoaderText').textContent = finalText;
     const box = $('aiLoader');
+    if(box) box.classList.add('hidden');
+  }
+
+  let followLoadTimer = null;
+  let followLoadStarted = 0;
+  const FOLLOW_LOAD_MESSAGES = [
+    'Aynı horary haritası korunuyor...',
+    'Devam sorusu ana soruyla bağlanıyor...',
+    'Teknik sinyaller tekrar okunuyor...',
+    'AI agent devam cevabını hazırlıyor...',
+    '1. deneme çalışıyor...',
+    'Gerekirse otomatik tekrar denenecek...',
+    'Cevap yazılıyor, biraz uzun sürebilir...'
+  ];
+  function showFollowLoader(){
+    const box = $('followLoader');
+    if(!box) return;
+    box.classList.remove('hidden');
+    followLoadStarted = Date.now();
+    let i = 0;
+    const setMsg = () => {
+      const elapsed = Math.floor((Date.now() - followLoadStarted) / 1000);
+      const attempt = Math.min(4, Math.max(1, Math.floor(elapsed / 9) + 1));
+      if($('followLoaderAttempt')) $('followLoaderAttempt').textContent = `${attempt}. deneme / 4 deneme hakkı`;
+      if($('followLoaderText')) $('followLoaderText').textContent = FOLLOW_LOAD_MESSAGES[i % FOLLOW_LOAD_MESSAGES.length];
+      if($('followLoaderMode')){
+        const tone = getTone();
+        $('followLoaderMode').textContent = tone === 'normal' ? 'Aynı harita · normal mod' : tone === 'optimist' ? 'Aynı harita · sweet mode' : 'Aynı harita · agresif mod';
+      }
+      i++;
+    };
+    setMsg();
+    clearInterval(followLoadTimer);
+    followLoadTimer = setInterval(setMsg, 1800);
+  }
+  function hideFollowLoader(finalText){
+    clearInterval(followLoadTimer);
+    followLoadTimer = null;
+    if(finalText && $('followLoaderText')) $('followLoaderText').textContent = finalText;
+    const box = $('followLoader');
     if(box) box.classList.add('hidden');
   }
 
@@ -1319,7 +1397,7 @@ Sert, net, detaylı, doğrudan. Kullanıcı moral metni istemiyor. "Olur gibi am
     btn.textContent = 'Cevap yazılıyor...';
     try{
       setAIStatus('Devam sorusu aynı horary haritası üzerinden AI agent’a gönderiliyor...', 'wait');
-      showAILoader('followup');
+      showFollowLoader();
       const prompt = buildAIWriterPrompt(lastAnalysis, q);
       const {text, provider, model, attempt, maxRetries} = await runRouterPrompt(prompt, q);
       const ans = `<div style="white-space:pre-wrap">${escapeHtml(text)}</div><p class="muted">Provider: ${escapeHtml(provider)} · Model: ${escapeHtml(model)}</p>`;
@@ -1328,7 +1406,7 @@ Sert, net, detaylı, doğrudan. Kullanıcı moral metni istemiyor. "Olur gibi am
       if(lastAIAnswer.length > 12000) lastAIAnswer = lastAIAnswer.slice(-12000);
       renderFollowups();
       $('followupInput').value='';
-      hideAILoader('Devam cevabı hazır.');
+      hideFollowLoader('Devam cevabı hazır.');
       const retryNote = attempt ? ` · ${attempt}/${maxRetries || '?'} deneme` : '';
       setAIStatus('Devam cevabı eklendi. Provider: '+provider+' · Model: '+model+retryNote, 'ok');
     }catch(e){
@@ -1338,7 +1416,7 @@ Sert, net, detaylı, doğrudan. Kullanıcı moral metni istemiyor. "Olur gibi am
       followupHistory.push({q, ans});
       renderFollowups();
       $('followupInput').value='';
-      hideAILoader();
+      hideFollowLoader();
       setAIStatus('AI devam cevabı çalışmadı. Teknik fallback eklendi.', 'error');
     }finally{
       btn.disabled = false;
@@ -1359,6 +1437,7 @@ Sert, net, detaylı, doğrudan. Kullanıcı moral metni istemiyor. "Olur gibi am
     followupHistory=[];
     if($('followupThread')) $('followupThread').innerHTML='';
     if($('followupInput')) $('followupInput').value='';
+    hideFollowLoader();
     if(!silent && lastAnalysis) showStatus('Devam soruları temizlendi. Ana harita duruyor.', 'ok');
   }
   function renderFollowups(){
@@ -1372,7 +1451,7 @@ Sert, net, detaylı, doğrudan. Kullanıcı moral metni istemiyor. "Olur gibi am
     return `<h4>Net cevap</h4><p><b>${escapeHtml(a.rule.verdict.label)}.</b> ${escapeHtml(main.final)}</p><p>Bu devam sorusunu aynı haritadan okursak ana hüküm değişmiyor: ${escapeHtml(shortConclusion(a))}</p><p>Teknik sebep: ${escapeHtml(buildSignalLines(a).slice(0,3).map(x=>x.title+': '+x.text).join(' '))}</p>`;
   }
   function buildRelationshipFollowup(question, qlow, a, metrics, main){
-    const m=metrics.public; const partner=Math.round(m['Gürkan tarafı bağ']); const querent=Math.round(m['Aslı tarafı duygu']); const healthy=Math.round(m['Sağlıklı gelecek']); const conflict=Math.round(m['Tartışma riski']); const cont=Math.round(m['Kısa vade devam']);
+    const m=metrics.public; const partner=Math.round(m['Karşı taraf bağı']); const querent=Math.round(m['Soru sahibi tarafı duygu']); const healthy=Math.round(m['Sağlıklı gelecek']); const conflict=Math.round(m['Tartışma riski']); const cont=Math.round(m['Kısa vade devam']);
     const sigs=buildSignalLines(a).slice(0,5).map(x=>`<li><b>${escapeHtml(x.title)}:</b> ${escapeHtml(x.text)}</li>`).join('');
     if(/sev|aşık|his|duygu/.test(qlow)){
       return `<h4>Sevgi / his cevabı</h4><p><b>Brutal cevap:</b> Karşı tarafta bağ/çekim puanı ${partner}%, soru sahibi tarafında duygu puanı ${querent}%.</p><p>Bu “hiçbir şey yok” haritası değil. Ama bu aynı zamanda “temiz, huzurlu, olgun aşk” haritası da değil. His var; ilişkiyi taşıma becerisi daha zayıf.</p><ul>${sigs}</ul><p><b>Net:</b> Sevgi ihtimali var, ama sağlıklı sevme/istikrar verme ihtimali daha düşük. Sevgi var diye ilişki iyi olacak sonucuna atlama.</p>`;
@@ -1386,7 +1465,7 @@ Sert, net, detaylı, doğrudan. Kullanıcı moral metni istemiyor. "Olur gibi am
     if(/geri dön|yazar|arar|mesaj|iletişim|konuş/.test(qlow)){
       return `<h4>İletişim / geri dönüş cevabı</h4><p><b>Brutal cevap:</b> İletişim ihtimali tamamen kapalı değil. Kısa vadede devam/temas puanı ${cont}%. Ama temasın huzurlu olma garantisi yok; tartışma riski ${conflict}%.</p><p>Yani “yazar mı/konuşur mu?” tarafında evet ihtimali var; ama “konuşma çözüm olur mu?” tarafında aynı kadar güçlü değil.</p><ul>${sigs}</ul><p><b>Net:</b> Konuşma gelir veya kapı açılırsa bile, mesele çözülmeden tekrar aynı yere dönme riski yüksek.</p>`;
     }
-    return `<h4>Devam sorusu cevabı</h4><p><b>${escapeHtml(main.headline)}</b> ${escapeHtml(main.final)}</p><p>Yüzdeler: Aslı tarafı ${querent}%, karşı taraf bağı ${partner}%, sağlıklı gelecek ${healthy}%, tartışma riski ${conflict}%, kısa vade devam ${cont}%.</p><ul>${sigs}</ul><p><b>Net:</b> Bu harita bağ gösteriyor ama huzur garantisi vermiyor. Devam sorusunun cevabında ana eksen değişmiyor: sevgi ayrı, ilişki kalitesi ayrı.</p>`;
+    return `<h4>Devam sorusu cevabı</h4><p><b>${escapeHtml(main.headline)}</b> ${escapeHtml(main.final)}</p><p>Yüzdeler: soru sahibi tarafı ${querent}%, karşı taraf bağı ${partner}%, sağlıklı gelecek ${healthy}%, tartışma riski ${conflict}%, kısa vade devam ${cont}%.</p><ul>${sigs}</ul><p><b>Net:</b> Bu harita bağ gösteriyor ama huzur garantisi vermiyor. Devam sorusunun cevabında ana eksen değişmiyor: sevgi ayrı, ilişki kalitesi ayrı.</p>`;
   }
   function buildInvestmentFollowup(question, qlow, a, metrics, main){
     const m=metrics.public; const entry=Math.round(m['Giriş desteği']); const risk=Math.round(m['Risk baskısı']); const wait=Math.round(m['Bekleme sinyali']);
